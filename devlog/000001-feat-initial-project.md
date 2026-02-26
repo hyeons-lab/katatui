@@ -74,9 +74,10 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 
 ## Commits
 
+3435a90 — fix: complete Kotlin wrappers — codegen, layout FFI, exception safety
 aa170a2 — feat: initial Katatui project scaffold
 61386c3 — chore: add devlog scaffolding for feat/initial-project
-HEAD — fix: codegen string handling, ListWidget rename, Terminal exception safety
+HEAD — chore: update devlog
 
 ## Next Steps
 
