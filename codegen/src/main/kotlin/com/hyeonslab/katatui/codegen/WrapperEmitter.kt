@@ -61,7 +61,7 @@ class WrapperEmitter(private val outputDir: File) {
             .initializer("ptr")
             .build()
         )
-        .addSuperinterface(ClassName(BASE_PACKAGE, "Katatui"))
+        .addSuperinterface(ClassName(BASE_PACKAGE, "KatatuiWidget"))
 
     // close() delegates to katatui_xxx_free
     val closeFun =
