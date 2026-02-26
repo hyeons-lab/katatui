@@ -86,7 +86,8 @@ aa170a2 — feat: initial Katatui project scaffold
 7f412fa — feat: Katatui sealed interface; generated widgets implement Katatui
 befb93e — refactor: rename Katatui sealed interface to KatatuiWidget
 e2db0f4 — refactor: move Terminal non-lifecycle methods to extension functions
-HEAD — feat: add Clear, Gauge, LineGauge, Sparkline, BarChart, Tabs, Table widgets
+e09c5ed — feat: add Clear, Gauge, LineGauge, Sparkline, BarChart, Tabs, Table widgets
+HEAD — feat: widget showcase sample app with tabs, sparkline, gauges, barchart, table
 
 ## What Changed (session 3)
 
