@@ -87,8 +87,8 @@ aa170a2 — feat: initial Katatui project scaffold
 befb93e — refactor: rename Katatui sealed interface to KatatuiWidget
 e2db0f4 — refactor: move Terminal non-lifecycle methods to extension functions
 e09c5ed — feat: add Clear, Gauge, LineGauge, Sparkline, BarChart, Tabs, Table widgets
-HEAD — feat: widget showcase sample app with tabs, sparkline, gauges, barchart, table
-
+aa4986f — feat: widget showcase sample app with tabs, sparkline, gauges, barchart, table
+HEAD — chore: update devlog
 ## What Changed (session 3)
 
 2026-02-26T07:08-0800 devlog/plans/000001-02-add-widgets.md — plan for adding 7 remaining ratatui widgets
