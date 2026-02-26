@@ -85,9 +85,45 @@ aa170a2 — feat: initial Katatui project scaffold
 4a77070 — fix: use ratatui::try_init() to propagate terminal errors as null
 7f412fa — feat: Katatui sealed interface; generated widgets implement Katatui
 befb93e — refactor: rename Katatui sealed interface to KatatuiWidget
-HEAD — refactor: move Terminal non-lifecycle methods to extension functions
+e2db0f4 — refactor: move Terminal non-lifecycle methods to extension functions
+HEAD — feat: add Clear, Gauge, LineGauge, Sparkline, BarChart, Tabs, Table widgets
+
+## What Changed (session 3)
+
+2026-02-26T07:08-0800 devlog/plans/000001-02-add-widgets.md — plan for adding 7 remaining ratatui widgets
+2026-02-26T07:08-0800 codegen/HeaderParser.kt — rewrote widgetGroups() to derive snake_case prefixes from opaqueTypes registry, enabling correct multi-word group detection (line_gauge, bar_chart); added list_state to excluded set
+2026-02-26T07:08-0800 codegen/WrapperEmitter.kt — added uint64_t → ULong mapping in cTypeToKotlin; added "ULong" → "0uL" in defaultValueFor
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/clear.rs — KatatuiClear FFI wrapper
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/gauge.rs — KatatuiGauge FFI wrapper (percent/label/style/gauge_style)
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/line_gauge.rs — KatatuiLineGauge FFI wrapper (percent/style via filled_style)
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/sparkline.rs — KatatuiSparkline FFI wrapper (data Vec<u64>/max/style/bar_style)
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/bar_chart.rs — KatatuiBarChart FFI wrapper; _bar not _add_bar to bypass codegen
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/tabs.rs — KatatuiTabs FFI wrapper (titles/selected/style)
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/table.rs — KatatuiTable FFI wrapper (headers/rows/current_row/widths/style)
+2026-02-26T07:08-0800 katatui-ffi/src/widgets/mod.rs — added 7 new pub mod + pub use entries
+2026-02-26T07:08-0800 katatui-ffi/src/lib.rs — added 7 katatui_frame_render_* functions
+2026-02-26T07:08-0800 katatui/src/.../Frame.kt — 7 new render() overloads
+2026-02-26T07:08-0800 katatui/src/.../Layout.kt — toCKind() private → internal
+2026-02-26T07:08-0800 katatui/src/.../BarChart.kt — new file, bar() extension
+2026-02-26T07:08-0800 katatui/src/.../Table.kt — new file, nextRow() and addWidth() extensions
+
+## Decisions (session 3)
+
+2026-02-26T07:08-0800 widgetGroups() uses opaqueTypes registry — deriving prefixes from registered C type names (KatatuiLineGauge → line_gauge) is robust against multi-word names; the old substringBefore("_") broke on line_gauge
+2026-02-26T07:08-0800 BarChart::new(bars) instead of BarGroup — ratatui 0.30 BarChart::new() directly takes Vec<Bar<'a>>; simpler than the BarGroup indirection
+2026-02-26T07:08-0800 LineGauge.line_style maps to filled_style — ratatui 0.30 has no single "line_style" setter; filled_style(Style) controls the filled bar styling
+2026-02-26T07:08-0800 Sparkline.data uses iter().copied() — data() accepts IntoIterator<Item: Into<SparklineBar>>; u64 implements Into<SparklineBar> natively
+2026-02-26T07:08-0800 katatui_bar_chart_bar not _add_bar — avoids codegen Adder detection; hand-written BarChart.kt extension calls it directly
+
+## Issues (session 3)
+
+**Kotlin Native cache stale after new FFI symbols:** Cache from before the new symbols caused undefined symbol linker errors. Fixed by cleaning build outputs and relinking with -Pkotlin.native.cacheKind.macosArm64=none to repopulate.
+
+**Table.kt KatatuiConstraint wrong package:** Initial import used cnames.structs; KatatuiConstraint is #[repr(C)] struct so lives in com.hyeonslab.katatui.cinterop. Fixed import.
+
+**LoopWithTooManyJumpStatements in HeaderParser.kt:** Refactored loop had three jump statements. Fixed by replacing the Elvis continue (?:continue) with explicit null check + nested if block.
 
 ## Next Steps
 
-- Push branch, update PR
+- Replace `HEAD` hash after commit; push branch, update PR
 - Swift wrapper using SKIE

@@ -1,9 +1,23 @@
+pub mod bar_chart;
 pub mod block;
+pub mod clear;
+pub mod gauge;
 pub mod layout;
+pub mod line_gauge;
 pub mod list;
 pub mod paragraph;
+pub mod sparkline;
+pub mod table;
+pub mod tabs;
 
+pub use bar_chart::*;
 pub use block::*;
+pub use clear::*;
+pub use gauge::*;
 pub use layout::*;
+pub use line_gauge::*;
 pub use list::*;
 pub use paragraph::*;
+pub use sparkline::*;
+pub use table::*;
+pub use tabs::*;

@@ -189,6 +189,7 @@ class WrapperEmitter(private val outputDir: File) {
       cType.contains("uint16_t") -> ClassName("kotlin", "UShort")
       cType.contains("uint8_t") -> ClassName("kotlin", "UByte")
       cType.contains("int32_t") -> ClassName("kotlin", "Int")
+      cType.contains("uint64_t") -> ClassName("kotlin", "ULong")
       else -> ClassName("kotlin", "Any")
     }
 
@@ -200,6 +201,7 @@ class WrapperEmitter(private val outputDir: File) {
       "UShort" -> "0u"
       "UByte" -> "0u"
       "Int" -> "0"
+      "ULong" -> "0uL"
       else -> "null"
     }
 }

@@ -133,18 +133,29 @@ class HeaderParser {
   }
 
   fun widgetGroups(): List<WidgetGroup> {
-    // Group katatui_<widget>_* functions by <widget> prefix, exclude terminal/event/frame/layout
-    val excluded = setOf("terminal", "event", "frame", "layout")
-    val grouped =
-      functions
-        .filter { it.name.startsWith("katatui_") }
-        .groupBy { it.group }
-        .filter { (group, _) -> group !in excluded }
-
-    return grouped.map { (group, fns) ->
-      val cName =
-        "Katatui" + group.split("_").joinToString("") { it.replaceFirstChar(Char::uppercase) }
-      val kotlinName = group.split("_").joinToString("") { it.replaceFirstChar(Char::uppercase) }
+    val excluded = setOf("terminal", "event", "frame", "layout", "list_state")
+    // "KatatuiLineGauge" → "line_gauge", "KatatuiBlock" → "block"
+    val prefixToCName =
+      opaqueTypes
+        .filter { it.startsWith("Katatui") }
+        .associateBy { cName ->
+          cName.removePrefix("Katatui").replace(Regex("(?<=[a-z])([A-Z])"), "_$1").lowercase()
+        }
+    val grouped = mutableMapOf<String, MutableList<CFunction>>()
+    for (fn in functions) {
+      if (!fn.name.startsWith("katatui_")) continue
+      val body = fn.name.removePrefix("katatui_")
+      val prefix =
+        prefixToCName.keys
+          .filter { p -> body == p || body.startsWith("${p}_") }
+          .maxByOrNull { it.length }
+      if (prefix != null && prefix !in excluded) {
+        grouped.getOrPut(prefix) { mutableListOf() }.add(fn)
+      }
+    }
+    return grouped.map { (prefix, fns) ->
+      val cName = prefixToCName[prefix]!!
+      val kotlinName = prefix.split("_").joinToString("") { it.replaceFirstChar(Char::uppercase) }
       WidgetGroup(cName, kotlinName, fns)
     }
   }

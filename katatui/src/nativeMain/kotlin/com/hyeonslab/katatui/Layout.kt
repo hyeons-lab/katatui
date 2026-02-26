@@ -70,7 +70,7 @@ internal constructor(private val dir: Direction, private val constraints: Array<
   }
 }
 
-private fun Constraint.toCKind(): KatatuiConstraintKind =
+internal fun Constraint.toCKind(): KatatuiConstraintKind =
   when (this) {
     is Constraint.Length -> Length
     is Constraint.Percentage -> Percentage

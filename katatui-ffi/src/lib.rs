@@ -5,7 +5,18 @@ pub mod widgets;
 use crossterm::event::{self, Event, KeyEventKind};
 use terminal::{KatatuiFrame, KatatuiTerminal};
 use types::KatatuiRect;
-use widgets::{block::build_block, list::build_list, paragraph::build_paragraph};
+use widgets::{
+    bar_chart::build_bar_chart,
+    block::build_block,
+    clear::build_clear,
+    gauge::build_gauge,
+    line_gauge::build_line_gauge,
+    list::build_list,
+    paragraph::build_paragraph,
+    sparkline::build_sparkline,
+    table::build_table,
+    tabs::build_tabs,
+};
 
 pub use types::*;
 
@@ -140,6 +151,111 @@ pub extern "C" fn katatui_frame_render_list(
         return;
     }
     let widget = build_list(unsafe { &*list });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_clear(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    clear: *const widgets::clear::KatatuiClear,
+) {
+    if frame.is_null() || clear.is_null() {
+        return;
+    }
+    let widget = build_clear(unsafe { &*clear });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_gauge(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    gauge: *const widgets::gauge::KatatuiGauge,
+) {
+    if frame.is_null() || gauge.is_null() {
+        return;
+    }
+    let widget = build_gauge(unsafe { &*gauge });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_line_gauge(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    gauge: *const widgets::line_gauge::KatatuiLineGauge,
+) {
+    if frame.is_null() || gauge.is_null() {
+        return;
+    }
+    let widget = build_line_gauge(unsafe { &*gauge });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_sparkline(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    sparkline: *const widgets::sparkline::KatatuiSparkline,
+) {
+    if frame.is_null() || sparkline.is_null() {
+        return;
+    }
+    let widget = build_sparkline(unsafe { &*sparkline });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_bar_chart(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    chart: *const widgets::bar_chart::KatatuiBarChart,
+) {
+    if frame.is_null() || chart.is_null() {
+        return;
+    }
+    let widget = build_bar_chart(unsafe { &*chart });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_tabs(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    tabs: *const widgets::tabs::KatatuiTabs,
+) {
+    if frame.is_null() || tabs.is_null() {
+        return;
+    }
+    let widget = build_tabs(unsafe { &*tabs });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_table(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    table: *const widgets::table::KatatuiTable,
+) {
+    if frame.is_null() || table.is_null() {
+        return;
+    }
+    let widget = build_table(unsafe { &*table });
     let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
         Box::new(move |rf| rf.render_widget(widget, area.into()));
     unsafe { (*frame).ops.push(op) };

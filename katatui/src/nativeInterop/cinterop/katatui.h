@@ -38,17 +38,31 @@ typedef enum KatatuiDirection {
   Vertical = 1,
 } KatatuiDirection;
 
+typedef struct KatatuiBarChart KatatuiBarChart;
+
 typedef struct KatatuiBlock KatatuiBlock;
+
+typedef struct KatatuiClear KatatuiClear;
 
 typedef struct KatatuiFrame KatatuiFrame;
 
+typedef struct KatatuiGauge KatatuiGauge;
+
 typedef struct KatatuiLayout KatatuiLayout;
+
+typedef struct KatatuiLineGauge KatatuiLineGauge;
 
 typedef struct KatatuiList KatatuiList;
 
 typedef struct KatatuiListState KatatuiListState;
 
 typedef struct KatatuiParagraph KatatuiParagraph;
+
+typedef struct KatatuiSparkline KatatuiSparkline;
+
+typedef struct KatatuiTable KatatuiTable;
+
+typedef struct KatatuiTabs KatatuiTabs;
 
 typedef struct KatatuiTerminal KatatuiTerminal;
 
@@ -109,6 +123,34 @@ void katatui_frame_render_list(struct KatatuiFrame *frame,
                                const struct KatatuiList *list,
                                struct KatatuiListState *_state);
 
+void katatui_frame_render_clear(struct KatatuiFrame *frame,
+                                struct KatatuiRect area,
+                                const struct KatatuiClear *clear);
+
+void katatui_frame_render_gauge(struct KatatuiFrame *frame,
+                                struct KatatuiRect area,
+                                const struct KatatuiGauge *gauge);
+
+void katatui_frame_render_line_gauge(struct KatatuiFrame *frame,
+                                     struct KatatuiRect area,
+                                     const struct KatatuiLineGauge *gauge);
+
+void katatui_frame_render_sparkline(struct KatatuiFrame *frame,
+                                    struct KatatuiRect area,
+                                    const struct KatatuiSparkline *sparkline);
+
+void katatui_frame_render_bar_chart(struct KatatuiFrame *frame,
+                                    struct KatatuiRect area,
+                                    const struct KatatuiBarChart *chart);
+
+void katatui_frame_render_tabs(struct KatatuiFrame *frame,
+                               struct KatatuiRect area,
+                               const struct KatatuiTabs *tabs);
+
+void katatui_frame_render_table(struct KatatuiFrame *frame,
+                                struct KatatuiRect area,
+                                const struct KatatuiTable *table);
+
 bool katatui_event_poll(uint64_t timeout_ms);
 
 /**
@@ -117,6 +159,24 @@ bool katatui_event_poll(uint64_t timeout_ms);
  * Returns 0 for non-key events or unrecognised keys.
  */
 uint8_t katatui_event_read_key_code(void);
+
+struct KatatuiBarChart *katatui_bar_chart_new(void);
+
+void katatui_bar_chart_free(struct KatatuiBarChart *chart);
+
+/**
+ * Appends a bar with the given label and value.
+ * Named `_bar` (not `_add_bar`) so codegen skips it; use the hand-written Kotlin extension.
+ */
+void katatui_bar_chart_bar(struct KatatuiBarChart *chart, const char *label, uint64_t value);
+
+void katatui_bar_chart_set_bar_width(struct KatatuiBarChart *chart, uint16_t width);
+
+void katatui_bar_chart_set_bar_gap(struct KatatuiBarChart *chart, uint16_t gap);
+
+void katatui_bar_chart_set_max(struct KatatuiBarChart *chart, uint64_t max);
+
+void katatui_bar_chart_set_style(struct KatatuiBarChart *chart, struct KatatuiStyle style);
 
 struct KatatuiBlock *katatui_block_new(void);
 
@@ -127,6 +187,22 @@ void katatui_block_set_title(struct KatatuiBlock *block, const char *title);
 void katatui_block_set_borders(struct KatatuiBlock *block, uint32_t borders);
 
 void katatui_block_set_style(struct KatatuiBlock *block, struct KatatuiStyle style);
+
+struct KatatuiClear *katatui_clear_new(void);
+
+void katatui_clear_free(struct KatatuiClear *clear);
+
+struct KatatuiGauge *katatui_gauge_new(void);
+
+void katatui_gauge_free(struct KatatuiGauge *gauge);
+
+void katatui_gauge_set_percent(struct KatatuiGauge *gauge, uint8_t percent);
+
+void katatui_gauge_set_label(struct KatatuiGauge *gauge, const char *label);
+
+void katatui_gauge_set_style(struct KatatuiGauge *gauge, struct KatatuiStyle style);
+
+void katatui_gauge_set_gauge_style(struct KatatuiGauge *gauge, struct KatatuiStyle style);
 
 struct KatatuiLayout *katatui_layout_new(enum KatatuiDirection direction);
 
@@ -143,6 +219,16 @@ void katatui_layout_add_constraint(struct KatatuiLayout *layout,
 uint32_t katatui_layout_split(struct KatatuiLayout *layout,
                               struct KatatuiRect area,
                               struct KatatuiRect *out_rects);
+
+struct KatatuiLineGauge *katatui_line_gauge_new(void);
+
+void katatui_line_gauge_free(struct KatatuiLineGauge *gauge);
+
+void katatui_line_gauge_set_percent(struct KatatuiLineGauge *gauge, uint8_t percent);
+
+void katatui_line_gauge_set_style(struct KatatuiLineGauge *gauge, struct KatatuiStyle style);
+
+void katatui_line_gauge_set_line_style(struct KatatuiLineGauge *gauge, struct KatatuiStyle style);
 
 struct KatatuiList *katatui_list_new(void);
 
@@ -163,3 +249,42 @@ void katatui_paragraph_free(struct KatatuiParagraph *para);
 void katatui_paragraph_set_style(struct KatatuiParagraph *para, struct KatatuiStyle style);
 
 void katatui_paragraph_set_wrap(struct KatatuiParagraph *para, bool wrap);
+
+struct KatatuiSparkline *katatui_sparkline_new(void);
+
+void katatui_sparkline_free(struct KatatuiSparkline *sparkline);
+
+void katatui_sparkline_add_data(struct KatatuiSparkline *sparkline, uint64_t value);
+
+void katatui_sparkline_set_max(struct KatatuiSparkline *sparkline, uint64_t max);
+
+void katatui_sparkline_set_style(struct KatatuiSparkline *sparkline, struct KatatuiStyle style);
+
+void katatui_sparkline_set_bar_style(struct KatatuiSparkline *sparkline, struct KatatuiStyle style);
+
+struct KatatuiTable *katatui_table_new(void);
+
+void katatui_table_free(struct KatatuiTable *table);
+
+void katatui_table_add_header(struct KatatuiTable *table, const char *header);
+
+void katatui_table_add_cell(struct KatatuiTable *table, const char *cell);
+
+/**
+ * Flushes the current row into the rows list and resets the current row buffer.
+ */
+void katatui_table_next_row(struct KatatuiTable *table);
+
+void katatui_table_add_width(struct KatatuiTable *table, struct KatatuiConstraint constraint);
+
+void katatui_table_set_style(struct KatatuiTable *table, struct KatatuiStyle style);
+
+struct KatatuiTabs *katatui_tabs_new(void);
+
+void katatui_tabs_free(struct KatatuiTabs *tabs);
+
+void katatui_tabs_add_title(struct KatatuiTabs *tabs, const char *title);
+
+void katatui_tabs_set_selected(struct KatatuiTabs *tabs, uint32_t selected);
+
+void katatui_tabs_set_style(struct KatatuiTabs *tabs, struct KatatuiStyle style);
