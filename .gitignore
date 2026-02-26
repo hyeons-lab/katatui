@@ -18,5 +18,3 @@ katatui-ffi/target/
 # Worktrees
 worktrees/
 
-# Generated Kotlin wrappers (regenerated at build time)
-katatui/src/nativeMain/kotlin/com/hyeonslab/katatui/generated/

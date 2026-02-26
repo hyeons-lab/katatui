@@ -1,8 +1,6 @@
 plugins {
-    id("katatui-quality")
-    alias(libs.plugins.kotlin.jvm)
+  id("katatui-quality")
+  alias(libs.plugins.kotlin.jvm)
 }
 
-dependencies {
-    implementation(libs.kotlinpoet)
-}
+dependencies { implementation(libs.kotlinpoet) }

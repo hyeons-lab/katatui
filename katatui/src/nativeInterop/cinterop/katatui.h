@@ -135,10 +135,14 @@ void katatui_layout_free(struct KatatuiLayout *layout);
 void katatui_layout_add_constraint(struct KatatuiLayout *layout,
                                    struct KatatuiConstraint constraint);
 
-void katatui_layout_split(struct KatatuiLayout *layout,
-                          struct KatatuiRect area,
-                          struct KatatuiRect *out_rects,
-                          uint32_t *out_count);
+/**
+ * Splits the layout area into rects according to the constraints.
+ * Returns the number of rects written into `out_rects`.
+ * `out_rects` must point to a buffer of at least `constraints.len() + 1` elements.
+ */
+uint32_t katatui_layout_split(struct KatatuiLayout *layout,
+                              struct KatatuiRect area,
+                              struct KatatuiRect *out_rects);
 
 struct KatatuiList *katatui_list_new(void);
 

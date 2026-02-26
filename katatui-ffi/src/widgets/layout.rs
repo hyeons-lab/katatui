@@ -31,15 +31,17 @@ pub extern "C" fn katatui_layout_add_constraint(
     unsafe { (*layout).constraints.push(constraint) };
 }
 
+/// Splits the layout area into rects according to the constraints.
+/// Returns the number of rects written into `out_rects`.
+/// `out_rects` must point to a buffer of at least `constraints.len() + 1` elements.
 #[no_mangle]
 pub extern "C" fn katatui_layout_split(
     layout: *mut KatatuiLayout,
     area: KatatuiRect,
     out_rects: *mut KatatuiRect,
-    out_count: *mut u32,
-) {
-    if layout.is_null() || out_rects.is_null() || out_count.is_null() {
-        return;
+) -> u32 {
+    if layout.is_null() || out_rects.is_null() {
+        return 0;
     }
     let l = unsafe { &*layout };
     let direction = match l.direction {
@@ -54,9 +56,9 @@ pub extern "C" fn katatui_layout_split(
         .split(area.into());
     let count = rects.len();
     unsafe {
-        *out_count = count as u32;
         for (i, r) in rects.iter().enumerate() {
             *out_rects.add(i) = (*r).into();
         }
     }
+    count as u32
 }
