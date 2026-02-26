@@ -7,6 +7,8 @@ import com.hyeonslab.katatui.Paragraph
 import com.hyeonslab.katatui.Terminal
 import com.hyeonslab.katatui.cinterop.katatui_event_poll
 import com.hyeonslab.katatui.cinterop.katatui_event_read_key_code
+import com.hyeonslab.katatui.draw
+import com.hyeonslab.katatui.init
 import com.hyeonslab.katatui.widgets.Borders
 import kotlinx.cinterop.ExperimentalForeignApi
 

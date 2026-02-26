@@ -32,6 +32,8 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 2026-02-25T22:45-0800 katatui/src/nativeInterop/cinterop/katatui.h — regenerated after layout.rs change
 2026-02-25T22:45-0800 katatui/src/nativeMain/kotlin/…/Layout.kt — rewrote split() using new return-value API; allocArray<KatatuiRect>; import kotlinx.cinterop.get; @file:OptIn
 2026-02-25T22:45-0800 katatui/src/nativeMain/kotlin/…/Terminal.kt — wrapped draw() and close() in try/finally for exception safety
+2026-02-25T23:43-0800 katatui/src/nativeMain/kotlin/…/Terminal.kt — moved init(), restore(), draw() to extension functions; ptr changed private→internal; @OptIn moved to @file: level
+2026-02-25T23:43-0800 sample-app/src/…/main.kt — added explicit imports for Terminal extension functions (draw, init)
 2026-02-25T22:45-0800 katatui/src/nativeMain/kotlin/…/Frame.kt — updated render(widget: ListWidget, …) after rename
 2026-02-25T22:45-0800 katatui/build.gradle.kts — moved generated output to build/generated-sources/ (avoids ktfmt scanning); added proper codegenClasspath Configuration for config-cache; wired cinterop→cargo build dependencies
 2026-02-25T22:45-0800 sample-app/build.gradle.kts — added rustTriples + linkerOpts (KMP native doesn't propagate lib linkerOpts to executable consumers)
@@ -56,6 +58,8 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 
 2026-02-25T22:45-0800 Generated sources in build/ not src/ — generated files in src/ are scanned by ktfmt/detekt; moving to build/generated-sources/ follows Gradle convention and removes need for exclusion rules in quality tools
 
+2026-02-25T23:43-0800 Extension functions in separate package require explicit imports — call sites are syntactically identical (terminal.init()), but when extension functions are defined in com.hyeonslab.katatui and the call site is in com.hyeonslab.katatui.sample, the extension functions must be explicitly imported (import com.hyeonslab.katatui.draw, etc.)
+
 ## Issues
 
 **String passing (const char * ↔ String):** Initially used toCString()/memScoped, then .cstr — both wrong. Kotlin/Native cinterop auto-converts const char* to String? at the boundary; just pass String directly. The import toCString was not even resolvable in 2.3.10.
@@ -77,7 +81,11 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 3435a90 — fix: complete Kotlin wrappers — codegen, layout FFI, exception safety
 aa170a2 — feat: initial Katatui project scaffold
 61386c3 — chore: add devlog scaffolding for feat/initial-project
-HEAD — chore: update devlog
+17e649d — chore: update devlog
+4a77070 — fix: use ratatui::try_init() to propagate terminal errors as null
+7f412fa — feat: Katatui sealed interface; generated widgets implement Katatui
+befb93e — refactor: rename Katatui sealed interface to KatatuiWidget
+HEAD — refactor: move Terminal non-lifecycle methods to extension functions
 
 ## Next Steps
 
