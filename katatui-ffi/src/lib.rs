@@ -13,12 +13,14 @@ pub use types::*;
 
 #[no_mangle]
 pub extern "C" fn katatui_terminal_new() -> *mut KatatuiTerminal {
-    let inner = ratatui::init();
-    Box::into_raw(Box::new(KatatuiTerminal {
-        inner,
-        drawing: false,
-        current_frame: None,
-    }))
+    match ratatui::try_init() {
+        Ok(inner) => Box::into_raw(Box::new(KatatuiTerminal {
+            inner,
+            drawing: false,
+            current_frame: None,
+        })),
+        Err(_) => std::ptr::null_mut(),
+    }
 }
 
 #[no_mangle]
