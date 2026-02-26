@@ -141,15 +141,10 @@ class HeaderParser {
         .groupBy { it.group }
         .filter { (group, _) -> group !in excluded }
 
-    // Override Kotlin class names that would collide with stdlib names
-    val kotlinNameOverrides = mapOf("list" to "ListWidget")
-
     return grouped.map { (group, fns) ->
       val cName =
         "Katatui" + group.split("_").joinToString("") { it.replaceFirstChar(Char::uppercase) }
-      val kotlinName =
-        kotlinNameOverrides[group]
-          ?: group.split("_").joinToString("") { it.replaceFirstChar(Char::uppercase) }
+      val kotlinName = group.split("_").joinToString("") { it.replaceFirstChar(Char::uppercase) }
       WidgetGroup(cName, kotlinName, fns)
     }
   }

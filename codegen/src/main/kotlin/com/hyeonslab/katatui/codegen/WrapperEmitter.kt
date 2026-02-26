@@ -61,7 +61,7 @@ class WrapperEmitter(private val outputDir: File) {
             .initializer("ptr")
             .build()
         )
-        .addSuperinterface(ClassName("kotlin", "AutoCloseable"))
+        .addSuperinterface(ClassName(BASE_PACKAGE, "Katatui"))
 
     // close() delegates to katatui_xxx_free
     val closeFun =
@@ -157,9 +157,6 @@ class WrapperEmitter(private val outputDir: File) {
             .addMember("%T::class", ClassName("kotlinx.cinterop", "ExperimentalForeignApi"))
             .build()
         )
-
-    // Import the opaque struct type from cnames.structs
-    fileBuilder.addImport("cnames.structs", group.cName)
 
     // Import all cinterop functions used in the generated code
     constructorFn.let { fileBuilder.addImport(CINTEROP_PACKAGE, it.name) }

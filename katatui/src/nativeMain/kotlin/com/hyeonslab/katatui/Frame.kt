@@ -21,7 +21,7 @@ class Frame internal constructor(private val ptr: CPointer<KatatuiFrame>) {
     katatui_frame_render_paragraph(ptr, area.toCValue(), widget.ptr)
   }
 
-  fun render(widget: ListWidget, area: Rect, state: ListState) {
+  fun render(widget: List, area: Rect, state: ListState) {
     katatui_frame_render_list(ptr, area.toCValue(), widget.ptr, state.ptr)
   }
 }
