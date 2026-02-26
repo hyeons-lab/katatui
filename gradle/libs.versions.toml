@@ -1,0 +1,17 @@
+[versions]
+detekt     = "1.23.8"
+kotest     = "6.1.3"
+kotlin     = "2.3.10"
+kotlinpoet = "2.2.0"
+ktfmt      = "0.25.0"
+
+[libraries]
+kotlin-test            = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotlinpoet             = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+
+[plugins]
+detekt               = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm           = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktfmt                = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }

@@ -1,0 +1,22 @@
+# Gradle
+.gradle/
+build/
+**/build/
+local.properties
+
+# Kotlin/Native
+*.klib
+
+# Rust / Cargo
+katatui-ffi/target/
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Worktrees
+worktrees/
+
+# Generated Kotlin wrappers (regenerated at build time)
+katatui/src/nativeMain/kotlin/com/hyeonslab/katatui/generated/

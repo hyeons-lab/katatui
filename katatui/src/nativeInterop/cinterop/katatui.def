@@ -1,0 +1,3 @@
+headers      = katatui.h
+headerFilter = katatui.h
+package      = com.hyeonslab.katatui.cinterop

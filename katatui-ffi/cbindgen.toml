@@ -1,0 +1,10 @@
+language = "C"
+
+[fn]
+rename_args = "snake_case"
+
+[struct]
+rename_fields = "snake_case"
+
+[enum]
+rename_variants = "ScreamingSnakeCase"
