@@ -89,7 +89,12 @@ befb93e — refactor: rename Katatui sealed interface to KatatuiWidget
 e2db0f4 — refactor: move Terminal non-lifecycle methods to extension functions
 e09c5ed — feat: add Clear, Gauge, LineGauge, Sparkline, BarChart, Tabs, Table widgets
 aa4986f — feat: widget showcase sample app with tabs, sparkline, gauges, barchart, table
+2faec07 — chore: update devlog
+0de71ba — test: add test suite for codegen and katatui modules
+7003cfd — test: tighten OptIn assertion and use Reset short name
+3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
 HEAD — chore: update devlog
+
 ## What Changed (session 3)
 
 2026-02-26T07:08-0800 devlog/plans/000001-02-add-widgets.md — plan for adding 7 remaining ratatui widgets
@@ -237,4 +242,4 @@ HEAD — chore: update devlog
 
 ## Next Steps
 
-- Commit and push all changes; update PR #1
+- Push and update PR #1
