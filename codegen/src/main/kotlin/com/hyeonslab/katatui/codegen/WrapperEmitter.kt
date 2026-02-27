@@ -18,7 +18,8 @@ private val CPOINTER = ClassName("kotlinx.cinterop", "CPointer")
 private const val BASE_PACKAGE = "com.hyeonslab.katatui"
 private const val CINTEROP_PACKAGE = "$BASE_PACKAGE.cinterop"
 
-// C types that require complex FFI handling (e.g. memScoped) — excluded from codegen setters
+// C types that require complex FFI handling (e.g. memScoped) — excluded from codegen setters.
+// Also excludes non-pointer Katatui enum/struct types, handled in isComplexType below.
 private val COMPLEX_C_TYPES = setOf("KatatuiStyle", "KatatuiRect", "KatatuiConstraint")
 
 /**
@@ -178,7 +179,10 @@ class WrapperEmitter(private val outputDir: File) {
       .mapIndexed { i, part -> if (i == 0) part else part.replaceFirstChar(Char::uppercase) }
       .joinToString("")
 
-  private fun isComplexType(cType: String): Boolean = COMPLEX_C_TYPES.any { cType.contains(it) }
+  private fun isComplexType(cType: String): Boolean =
+    COMPLEX_C_TYPES.any { cType.contains(it) } ||
+      // Non-pointer Katatui enum/struct params need hand-written Kotlin wrappers
+      (cType.contains("Katatui") && !cType.contains("*"))
 
   private fun cTypeToKotlin(cType: String): ClassName =
     when {
@@ -189,6 +193,7 @@ class WrapperEmitter(private val outputDir: File) {
       cType.contains("uint8_t") -> ClassName("kotlin", "UByte")
       cType.contains("int32_t") -> ClassName("kotlin", "Int")
       cType.contains("uint64_t") -> ClassName("kotlin", "ULong")
+      cType.contains("double") -> ClassName("kotlin", "Double")
       else -> ClassName("kotlin", "Any")
     }
 
@@ -201,6 +206,7 @@ class WrapperEmitter(private val outputDir: File) {
       "UByte" -> "0u"
       "Int" -> "0"
       "ULong" -> "0uL"
+      "Double" -> "0.0"
       else -> "null"
     }
 }

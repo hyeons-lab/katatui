@@ -205,6 +205,36 @@ HEAD — chore: update devlog
 2026-02-27T00:45-0800 codegen/src/test/.../WrapperEmitterTest.kt — tightened OptIn assertion: `"ExperimentalForeignApi"` → `"ExperimentalForeignApi::class"` so it verifies the annotation and not just the import
 2026-02-27T00:45-0800 katatui/src/nativeTest/.../widgets/StyleNativeTest.kt — replaced FQCN `com.hyeonslab.katatui.cinterop.Reset` with short `Reset` in default-style test (Reset is in scope via import added in session 7)
 
+## What Changed (session 9 — Scrollbar, Chart, Canvas, Logo, Mascot)
+
+2026-02-27T14:23-0800 katatui-ffi/src/types.rs — added KatatuiMarker enum (MarkerDot…MarkerQuadrant, prefixed to avoid C namespace collision); added From<KatatuiMarker>; made color_from_katatui pub(crate)
+2026-02-27T14:23-0800 katatui-ffi/src/widgets/scrollbar.rs — new; KatatuiScrollbar (orientation, thumb/track/begin/end symbols/styles); KatatuiScrollbarState wrapping ratatui ScrollbarState; symbols stored as pre-leaked &'static str
+2026-02-27T14:23-0800 katatui-ffi/src/widgets/chart.rs — new; KatatuiChart with begin/commit dataset pattern; data Vec leaked once at commit time to &'static [(f64,f64)]; AxisBuilder for x/y axes; build_chart() called every frame at zero allocation cost
+2026-02-27T14:23-0800 katatui-ffi/src/widgets/canvas.rs — new; KatatuiCanvas with buffered CanvasCmd enum (Circle/Line/Rectangle/Points); commands replayed in 'static closure at render time
+2026-02-27T14:23-0800 katatui-ffi/src/widgets/logo.rs — new; KatatuiLogo (Tiny/Small size); KatatuiMascot with KatatuiMascotEyeColor (EyeDefault/EyeRed, prefixed to avoid conflict with KatatuiColor::Red)
+2026-02-27T14:23-0800 katatui-ffi/src/widgets/mod.rs — added pub mod canvas/chart/logo/scrollbar + pub use entries
+2026-02-27T14:23-0800 katatui-ffi/src/lib.rs — added imports and render functions for Scrollbar (stateful), Chart, Canvas, Logo, Mascot
+2026-02-27T14:23-0800 codegen/src/main/kotlin/.../HeaderParser.kt — added "scrollbar_state" to excluded set
+2026-02-27T14:23-0800 codegen/src/main/kotlin/.../WrapperEmitter.kt — updated isComplexType to exclude non-pointer KatatuiXxx types; added double→Double and "Double"→"0.0" mappings
+2026-02-27T14:23-0800 katatui/src/nativeMain/kotlin/.../ScrollbarState.kt — new hand-written state class; contentLength/position/viewportContentLength properties
+2026-02-27T14:23-0800 katatui/src/nativeMain/kotlin/.../ScrollbarExt.kt — ScrollbarOrientation enum + setOrientation(); setThumbStyle/setTrackStyle/setBeginStyle/setEndStyle; imports toCValue explicitly
+2026-02-27T14:23-0800 katatui/src/nativeMain/kotlin/.../ChartExt.kt — GraphType + ChartMarker enums; datasetPoint/setDatasetGraphType/setDatasetMarker/setDatasetStyle/commitDataset/xBounds/yBounds/setXStyle/setYStyle/setStyle; uses import aliases for Marker* cinterop constants
+2026-02-27T14:23-0800 katatui/src/nativeMain/kotlin/.../CanvasExt.kt — CanvasMarker enum; setMarker/xBounds/yBounds/circle/line/rectangle/beginPoints/point/commitPoints; uses import aliases (MarkerDot as Dot, etc.)
+2026-02-27T14:23-0800 katatui/src/nativeMain/kotlin/.../LogoExt.kt — LogoSize + MascotEyeColor enums; setSize() for Logo; setEyeColor() using EyeDefault/EyeRed import aliases
+2026-02-27T14:23-0800 katatui/src/nativeMain/kotlin/.../Frame.kt — 5 new render() overloads and DSL extension functions for scrollbar/chart/canvas/logo/mascot
+
+## Decisions (session 9)
+
+2026-02-27T14:23-0800 Box::leak() for Scrollbar symbols — Scrollbar<'a> symbols are &'a str; pre-leaking once per set-call gives a &'static str that build_scrollbar() can use every frame at zero allocation cost
+2026-02-27T14:23-0800 Dataset data leaked once at commit — Dataset<'a> takes &'a [(f64,f64)]; leaking the Vec at katatui_chart_commit_dataset() yields &'static [(f64,f64)] so build_chart() is allocation-free per frame
+2026-02-27T14:23-0800 Canvas buffered commands — Canvas<'a,F> is closure-generic; buffering draw commands as CanvasCmd and inlining the Canvas::default().paint(move|ctx|{…}) in the render function avoids the 'static + generic closure lifetime problem
+2026-02-27T14:23-0800 C enum variant prefixes for disambiguation — C enum values are global constants; KatatuiMarker::Bar and KatatuiGraphType::Bar (and KatatuiColor::Red vs KatatuiMascotEyeColor::Red) caused cinterop parse errors; fixed with Marker*/Eye* prefixes in Rust; Kotlin extension files use import aliases to keep code readable
+
+## Issues (session 9)
+
+**C global enum namespace collisions:** KatatuiMarker::Bar conflicted with KatatuiGraphType::Bar, and KatatuiMascotEyeColor::Red with KatatuiColor::Red in katatui.h. Import aliases can't fix C-level redefinition errors. Fixed by prefixing KatatuiMarker variants (MarkerDot…MarkerQuadrant) and KatatuiMascotEyeColor variants (EyeDefault, EyeRed); used import aliases in Kotlin extension files to restore readability.
+**internal Style.toCValue() not auto-imported:** The extension function is internal to com.hyeonslab.katatui.widgets; callers in com.hyeonslab.katatui must add `import com.hyeonslab.katatui.widgets.toCValue` explicitly. Pattern established in BlockExt.kt but not followed in the new files until compile error was observed.
+
 ## Next Steps
 
 - Commit and push all changes; update PR #1

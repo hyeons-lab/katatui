@@ -8,11 +8,14 @@ use types::KatatuiRect;
 use widgets::{
     bar_chart::build_bar_chart,
     block::build_block,
+    chart::build_chart,
     clear::build_clear,
     gauge::build_gauge,
     line_gauge::build_line_gauge,
     list::build_list,
+    logo::{build_logo, build_mascot},
     paragraph::build_paragraph,
+    scrollbar::build_scrollbar,
     sparkline::build_sparkline,
     table::build_table,
     tabs::build_tabs,
@@ -302,6 +305,125 @@ pub extern "C" fn katatui_frame_render_image(
             &mut s.protocol,
         );
     });
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_scrollbar(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    sb: *const widgets::scrollbar::KatatuiScrollbar,
+    state: *mut widgets::scrollbar::KatatuiScrollbarState,
+) {
+    if frame.is_null() || sb.is_null() || state.is_null() {
+        return;
+    }
+    let widget = build_scrollbar(unsafe { &*sb });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        let s = unsafe { &mut *state };
+        rf.render_stateful_widget(widget, area.into(), &mut s.inner);
+    });
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_chart(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    chart: *const widgets::chart::KatatuiChart,
+) {
+    if frame.is_null() || chart.is_null() {
+        return;
+    }
+    let widget = build_chart(unsafe { &*chart });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_canvas(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    canvas: *const widgets::canvas::KatatuiCanvas,
+) {
+    if frame.is_null() || canvas.is_null() {
+        return;
+    }
+    let c = unsafe { &*canvas };
+    let commands = c.commands.clone();
+    let x_bounds = [c.x_bounds_min, c.x_bounds_max];
+    let y_bounds = [c.y_bounds_min, c.y_bounds_max];
+    let marker = c.marker;
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        use ratatui::widgets::canvas::{Canvas, Circle, Line as CanvasLine, Points, Rectangle};
+        use widgets::canvas::CanvasCmd;
+        let widget = Canvas::default()
+            .x_bounds(x_bounds)
+            .y_bounds(y_bounds)
+            .marker(marker.into())
+            .paint(move |ctx| {
+                for cmd in &commands {
+                    match cmd {
+                        CanvasCmd::Circle { x, y, radius, color } => {
+                            ctx.draw(&Circle { x: *x, y: *y, radius: *radius, color: *color });
+                        }
+                        CanvasCmd::Line { x1, y1, x2, y2, color } => {
+                            ctx.draw(&CanvasLine {
+                                x1: *x1,
+                                y1: *y1,
+                                x2: *x2,
+                                y2: *y2,
+                                color: *color,
+                            });
+                        }
+                        CanvasCmd::Rectangle { x, y, width, height, color } => {
+                            ctx.draw(&Rectangle {
+                                x: *x,
+                                y: *y,
+                                width: *width,
+                                height: *height,
+                                color: *color,
+                            });
+                        }
+                        CanvasCmd::Points { coords, color } => {
+                            ctx.draw(&Points { coords: coords.as_slice(), color: *color });
+                        }
+                    }
+                }
+            });
+        rf.render_widget(widget, area.into());
+    });
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_logo(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    logo: *const widgets::logo::KatatuiLogo,
+) {
+    if frame.is_null() || logo.is_null() {
+        return;
+    }
+    let widget = build_logo(unsafe { &*logo });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_mascot(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    mascot: *const widgets::logo::KatatuiMascot,
+) {
+    if frame.is_null() || mascot.is_null() {
+        return;
+    }
+    let widget = build_mascot(unsafe { &*mascot });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
     unsafe { (*frame).ops.push(op) };
 }
 

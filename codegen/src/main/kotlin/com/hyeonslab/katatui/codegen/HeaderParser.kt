@@ -153,6 +153,7 @@ class HeaderParser {
         "layout",
         "list_state",
         "image_state",
+        "scrollbar_state",
         "table_state",
         "state",
       )
