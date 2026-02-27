@@ -26,8 +26,14 @@ import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 
 object Layout {
+  fun vertical(constraints: kotlin.collections.List<Constraint>): LayoutBuilder =
+    LayoutBuilder(Direction.Vertical, constraints.toTypedArray())
+
   fun vertical(vararg constraints: Constraint): LayoutBuilder =
     LayoutBuilder(Direction.Vertical, constraints)
+
+  fun horizontal(constraints: kotlin.collections.List<Constraint>): LayoutBuilder =
+    LayoutBuilder(Direction.Horizontal, constraints.toTypedArray())
 
   fun horizontal(vararg constraints: Constraint): LayoutBuilder =
     LayoutBuilder(Direction.Horizontal, constraints)

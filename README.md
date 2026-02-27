@@ -35,15 +35,11 @@ import com.hyeonslab.katatui.*
 import com.hyeonslab.katatui.widgets.*
 
 fun main() {
-    Terminal().use { terminal ->
-        terminal.init()
-        terminal.draw { frame ->
-            frame.render(
-                Paragraph("Hello from Katatui!"),
-                frame.size,
-            )
+    terminal {
+        draw {
+            paragraph("Hello from Katatui!")
         }
-        katatui_event_poll(0u)  // wait for any key
+        poll() // wait for any key
     }
 }
 ```

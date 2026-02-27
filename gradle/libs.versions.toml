@@ -4,6 +4,7 @@ kotest     = "6.1.3"
 kotlin     = "2.3.10"
 kotlinpoet = "2.2.0"
 ktfmt      = "0.25.0"
+skie       = "0.10.10"
 
 [libraries]
 kotlin-test            = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -15,3 +16,4 @@ detekt               = { id = "io.gitlab.arturbosch.detekt", version.ref = "dete
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-jvm           = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktfmt                = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
+skie                 = { id = "co.touchlab.skie", version.ref = "skie" }

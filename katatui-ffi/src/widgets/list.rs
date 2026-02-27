@@ -5,12 +5,12 @@ pub struct KatatuiList {
 }
 
 pub struct KatatuiListState {
-    pub(crate) selected: Option<usize>,
+    pub(crate) inner: ratatui::widgets::ListState,
 }
 
 pub fn build_list(l: &KatatuiList) -> ratatui::widgets::List<'static> {
-    use ratatui::widgets::List;
-    let items: Vec<String> = l.items.clone();
+    use ratatui::widgets::{List, ListItem};
+    let items: Vec<ListItem> = l.items.iter().map(|s| ListItem::new(s.clone())).collect();
     List::new(items)
 }
 
@@ -37,7 +37,9 @@ pub extern "C" fn katatui_list_add_item(list: *mut KatatuiList, item: *const std
 
 #[no_mangle]
 pub extern "C" fn katatui_list_state_new() -> *mut KatatuiListState {
-    Box::into_raw(Box::new(KatatuiListState { selected: None }))
+    Box::into_raw(Box::new(KatatuiListState {
+        inner: ratatui::widgets::ListState::default(),
+    }))
 }
 
 #[no_mangle]
@@ -52,11 +54,10 @@ pub extern "C" fn katatui_list_state_select(state: *mut KatatuiListState, index:
     if state.is_null() {
         return;
     }
-    unsafe {
-        (*state).selected = if index < 0 {
-            None
-        } else {
-            Some(index as usize)
-        };
+    let s = unsafe { &mut *state };
+    if index < 0 {
+        s.inner.select(None);
+    } else {
+        s.inner.select(Some(index as usize));
     }
 }

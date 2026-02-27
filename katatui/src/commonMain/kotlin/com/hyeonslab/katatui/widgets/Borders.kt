@@ -1,14 +1,14 @@
 package com.hyeonslab.katatui.widgets
 
-value class Borders(val bits: UInt) {
+class Borders(val bits: UInt) {
   operator fun plus(other: Borders): Borders = Borders(bits or other.bits)
 
   companion object {
-    val NONE = Borders(0u)
-    val TOP = Borders(1u)
-    val RIGHT = Borders(2u)
-    val BOTTOM = Borders(4u)
-    val LEFT = Borders(8u)
-    val ALL = Borders(15u)
+    val none = Borders(0u)
+    val top = Borders(1u)
+    val right = Borders(2u)
+    val bottom = Borders(4u)
+    val left = Borders(8u)
+    val all = Borders(15u)
   }
 }

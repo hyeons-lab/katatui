@@ -75,59 +75,53 @@ class WrapperEmitter(private val outputDir: File) {
         .build()
     classBuilder.addFunction(closeFun)
 
-    // Setter properties — skip complex C types that need hand-written wrappers
-    data class SetterInfo(
-      val propName: String,
-      val setter: com.hyeonslab.katatui.codegen.model.CFunction,
-      val paramType: String,
-    )
-    group.setters
-      .mapNotNull { s ->
-        val name = s.setterProperty?.let { snakeToCamel(it) } ?: return@mapNotNull null
-        val param = s.params.getOrNull(1) ?: return@mapNotNull null
-        if (isComplexType(param.type)) return@mapNotNull null
-        SetterInfo(name, s, param.type)
-      }
-      .forEach { (propName, setter, paramType) ->
-        val kotlinType = cTypeToKotlin(paramType)
-        val propBuilder =
-          PropertySpec.builder(propName, kotlinType)
-            .mutable(true)
-            .initializer(defaultValueFor(kotlinType))
-            .setter(
-              FunSpec.setterBuilder()
-                .addParameter("value", kotlinType)
-                .addStatement("field = value")
-                .addStatement("${setter.name}(ptr, value)")
-                .build()
-            )
-        classBuilder.addProperty(propBuilder.build())
-      }
+    group.setters.forEach { s ->
+      val propName = s.setterProperty ?: return@forEach
+      val param = s.params.getOrNull(1) ?: return@forEach
+      if (isComplexType(param.type)) return@forEach
 
-    // Adder methods
-    data class AdderInfo(
-      val methodName: String,
-      val adder: com.hyeonslab.katatui.codegen.model.CFunction,
-      val paramType: String,
+      val name = snakeToCamel(propName)
+      val paramType = param.type
+      val kotlinType = cTypeToKotlin(paramType)
+      val propBuilder =
+        PropertySpec.builder(name, kotlinType)
+          .mutable(true)
+          .initializer(defaultValueFor(kotlinType))
+          .setter(
+            FunSpec.setterBuilder()
+              .addParameter("value", kotlinType)
+              .addStatement("field = value")
+              .addStatement("${s.name}(ptr, value)")
+              .build()
+          )
+      classBuilder.addProperty(propBuilder.build())
+    }
+
+    // Add area property
+    val rectType = ClassName(BASE_PACKAGE, "Rect")
+    classBuilder.addProperty(
+      PropertySpec.builder("area", rectType.copy(nullable = true))
+        .mutable(true)
+        .initializer("null")
+        .build()
     )
+
     val adderPrefix = "katatui_${group.kotlinName.lowercase()}_add_"
-    group.adders
-      .mapNotNull { a ->
-        val suffix = a.name.removePrefix(adderPrefix).ifEmpty { a.name }
-        val methodName = "add${snakeToCamel(suffix).replaceFirstChar(Char::uppercase)}"
-        val param = a.params.getOrNull(1) ?: return@mapNotNull null
-        if (isComplexType(param.type)) return@mapNotNull null
-        AdderInfo(methodName, a, param.type)
-      }
-      .forEach { (methodName, adder, paramType) ->
-        val kotlinType = cTypeToKotlin(paramType)
-        val adderFun =
-          FunSpec.builder(methodName)
-            .addParameter("value", kotlinType)
-            .addStatement("${adder.name}(ptr, value)")
-            .build()
-        classBuilder.addFunction(adderFun)
-      }
+    group.adders.forEach { a ->
+      val param = a.params.getOrNull(1) ?: return@forEach
+      if (isComplexType(param.type)) return@forEach
+
+      val suffix = a.name.removePrefix(adderPrefix).ifEmpty { a.name }
+      val methodName = "add${snakeToCamel(suffix).replaceFirstChar(Char::uppercase)}"
+      val paramType = param.type
+      val kotlinType = cTypeToKotlin(paramType)
+      val adderFun =
+        FunSpec.builder(methodName)
+          .addParameter("value", kotlinType)
+          .addStatement("${a.name}(ptr, value)")
+          .build()
+      classBuilder.addFunction(adderFun)
+    }
 
     // Companion object DSL factory
     // Constructor params (e.g. katatui_paragraph_new(const char *text))
@@ -138,7 +132,12 @@ class WrapperEmitter(private val outputDir: File) {
     val invokeFunBuilder =
       FunSpec.builder("invoke").addModifiers(KModifier.OPERATOR).returns(selfType)
     for (param in ctorParams) {
-      invokeFunBuilder.addParameter(param.name, cTypeToKotlin(param.type))
+      val kotlinType = cTypeToKotlin(param.type)
+      invokeFunBuilder.addParameter(
+        ParameterSpec.builder(param.name, kotlinType)
+          .defaultValue(defaultValueFor(kotlinType))
+          .build()
+      )
     }
     invokeFunBuilder
       .addParameter(ParameterSpec.builder("init", initLambdaType).defaultValue("{}").build())
@@ -162,10 +161,10 @@ class WrapperEmitter(private val outputDir: File) {
     constructorFn.let { fileBuilder.addImport(CINTEROP_PACKAGE, it.name) }
     destructorFn?.let { fileBuilder.addImport(CINTEROP_PACKAGE, it.name) }
     group.setters
-      .filter { !isComplexType(it.params.getOrNull(1)?.type ?: "") }
+      .filter { !isComplexType(it.params.getOrNull(1)?.type.orEmpty()) }
       .forEach { fileBuilder.addImport(CINTEROP_PACKAGE, it.name) }
     group.adders
-      .filter { !isComplexType(it.params.getOrNull(1)?.type ?: "") }
+      .filter { !isComplexType(it.params.getOrNull(1)?.type.orEmpty()) }
       .forEach { fileBuilder.addImport(CINTEROP_PACKAGE, it.name) }
 
     fileBuilder.addType(classBuilder.build())

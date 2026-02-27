@@ -1,36 +1,37 @@
 package com.hyeonslab.katatui.sample
 
-import com.hyeonslab.katatui.BarChart
-import com.hyeonslab.katatui.Block
-import com.hyeonslab.katatui.Clear
 import com.hyeonslab.katatui.Constraint
 import com.hyeonslab.katatui.Frame
-import com.hyeonslab.katatui.Gauge
+import com.hyeonslab.katatui.ImageState
+import com.hyeonslab.katatui.KEY_LEFT
+import com.hyeonslab.katatui.KEY_RIGHT
 import com.hyeonslab.katatui.Layout
-import com.hyeonslab.katatui.LineGauge
-import com.hyeonslab.katatui.Paragraph
 import com.hyeonslab.katatui.Rect
-import com.hyeonslab.katatui.Sparkline
-import com.hyeonslab.katatui.Table
-import com.hyeonslab.katatui.Tabs
-import com.hyeonslab.katatui.Terminal
 import com.hyeonslab.katatui.addWidth
 import com.hyeonslab.katatui.bar
-import com.hyeonslab.katatui.cinterop.katatui_event_poll
-import com.hyeonslab.katatui.cinterop.katatui_event_read_key_code
+import com.hyeonslab.katatui.barChart
+import com.hyeonslab.katatui.block
+import com.hyeonslab.katatui.clear
 import com.hyeonslab.katatui.draw
-import com.hyeonslab.katatui.init
+import com.hyeonslab.katatui.gauge
+import com.hyeonslab.katatui.image
+import com.hyeonslab.katatui.inner
+import com.hyeonslab.katatui.lineGauge
 import com.hyeonslab.katatui.nextRow
+import com.hyeonslab.katatui.paragraph
+import com.hyeonslab.katatui.poll
+import com.hyeonslab.katatui.readKey
+import com.hyeonslab.katatui.sparkline
+import com.hyeonslab.katatui.style
+import com.hyeonslab.katatui.table
+import com.hyeonslab.katatui.tabs
+import com.hyeonslab.katatui.terminal
 import com.hyeonslab.katatui.widgets.Borders
+import com.hyeonslab.katatui.widgets.Color
+import com.hyeonslab.katatui.widgets.Style
 import kotlinx.cinterop.ExperimentalForeignApi
 
-private const val KEY_Q = 'q'.code.toByte()
-private const val KEY_1 = '1'.code.toByte()
-private const val KEY_2 = '2'.code.toByte()
-private const val KEY_LEFT: Byte = -13 // 0xF3 as signed byte
-private const val KEY_RIGHT: Byte = -12 // 0xF4 as signed byte
-
-private val TAB_NAMES = listOf("Dashboard", "Widgets")
+private val TAB_NAMES = listOf("Dashboard", "Widgets", "Image")
 
 // Sine-shaped wave cycling through 20 values (0–100 range)
 private val WAVE =
@@ -73,8 +74,10 @@ private val WIDGET_ROWS =
 
 @OptIn(ExperimentalForeignApi::class)
 fun main() {
-  Terminal().use { terminal ->
-    terminal.init()
+  terminal {
+    // LEAP_DARK_PNG is embedded at build time from sample-app/leap-dark.png.
+    // To use a different image, add it to generateResources in sample-app/build.gradle.kts.
+    val imageState = ImageState.fromBytes(LEAP_DARK_PNG)
 
     var activeTab = 0
     var tick = 0
@@ -90,37 +93,41 @@ fun main() {
       // Mem is offset by a half-period so the two gauges move in opposite directions
       val memPct = WAVE[(tick + WAVE.size / 2) % WAVE.size].toUByte()
 
-      terminal.draw {
+      draw {
+        block(size) { style = Style(bg = Color.Rgb(41u, 44u, 51u)) }
         val areas = Layout.vertical(Constraint.Length(3), Constraint.Fill(1)).split(size)
         val tabRow = areas[0]
         val content = areas[1]
 
         // Tab bar
-        Tabs {
-            TAB_NAMES.forEach { addTitle(it) }
-            selected = activeTab.toUInt()
-          }
-          .use { render(it, tabRow) }
+        tabs(tabRow) {
+          TAB_NAMES.forEach { addTitle(it) }
+          selected = activeTab.toUInt()
+        }
 
         // Clear the content area on every frame to prevent cross-tab artifacts
-        Clear().use { render(it, content) }
+        clear(content)
 
         when (activeTab) {
           0 -> renderDashboard(content, history, cpuPct, memPct)
           1 -> renderWidgetTable(content)
+          2 -> renderImageTab(content, imageState)
         }
       }
 
-      if (katatui_event_poll(100u)) {
-        when (katatui_event_read_key_code().toByte()) {
-          KEY_Q -> break
-          KEY_1 -> activeTab = 0
-          KEY_2 -> activeTab = 1
+      if (poll()) {
+        when (readKey()) {
+          'q' -> break
+          '1' -> activeTab = 0
+          '2' -> activeTab = 1
+          '3' -> activeTab = 2
           KEY_LEFT -> if (activeTab > 0) activeTab--
           KEY_RIGHT -> if (activeTab < TAB_NAMES.lastIndex) activeTab++
         }
       }
     }
+
+    imageState?.close()
   }
 }
 
@@ -147,16 +154,14 @@ private fun Frame.renderDashboard(
   val barCol = cols[1]
 
   // Sparkline — shows the rolling history as a compact bar chart
-  Block {
-      title = "Activity"
-      borders = Borders.ALL.bits
-    }
-    .use { render(it, sparkArea) }
-  Sparkline {
-      history.forEach { addData(it) }
-      max = 100uL
-    }
-    .use { render(it, sparkArea.inner()) }
+  block(sparkArea) {
+    title = "Activity"
+    borders = Borders.all.bits
+  }
+  sparkline(sparkArea.inner()) {
+    history.forEach { addData(it) }
+    max = 100uL
+  }
 
   // Gauge rows stacked in the left column
   val gaugeRows =
@@ -164,69 +169,74 @@ private fun Frame.renderDashboard(
   val cpuRow = gaugeRows[0]
   val memRow = gaugeRows[1]
 
-  Block {
-      title = "CPU  ${cpuPct}%"
-      borders = Borders.ALL.bits
-    }
-    .use { render(it, cpuRow) }
-  Gauge { percent = cpuPct }.use { render(it, cpuRow.inner()) }
+  block(cpuRow) {
+    title = "CPU  ${cpuPct}%"
+    borders = Borders.all.bits
+  }
+  gauge(cpuRow.inner()) { percent = cpuPct }
 
-  Block {
-      title = "Mem  ${memPct}%"
-      borders = Borders.ALL.bits
-    }
-    .use { render(it, memRow) }
-  LineGauge { percent = memPct }.use { render(it, memRow.inner()) }
+  block(memRow) {
+    title = "Mem  ${memPct}%"
+    borders = Borders.all.bits
+  }
+  lineGauge(memRow.inner()) { percent = memPct }
 
   // Bar chart in the right column
-  Block {
-      title = "Downloads"
-      borders = Borders.ALL.bits
-    }
-    .use { render(it, barCol) }
-  BarChart {
-      barWidth = 5u
-      barGap = 1u
-      bar("Rust", 82uL)
-      bar("KMP", 65uL)
-      bar("Swift", 47uL)
-      bar("Go", 71uL)
-    }
-    .use { render(it, barCol.inner()) }
+  block(barCol) {
+    title = "Downloads"
+    borders = Borders.all.bits
+  }
+  barChart(barCol.inner()) {
+    barWidth = 5u
+    barGap = 1u
+    bar("Rust", 82uL)
+    bar("KMP", 65uL)
+    bar("Swift", 47uL)
+    bar("Go", 71uL)
+  }
 
   // Help text
-  Paragraph("◄ ►  or  1 / 2 : switch tabs     q : quit").use { render(it, helpArea) }
+  paragraph {
+    text = "◄ ►  or  1 / 2 / 3 : switch tabs     q : quit"
+    this.area = helpArea
+  }
 }
 
 @OptIn(ExperimentalForeignApi::class)
 private fun Frame.renderWidgetTable(area: Rect) {
-  Block {
-      title = "Katatui Widgets"
-      borders = Borders.ALL.bits
+  block(area) {
+    title = "Katatui Widgets"
+    borders = Borders.all.bits
+  }
+  table(area.inner()) {
+    addHeader("Widget")
+    addHeader("Category")
+    addHeader("Added")
+    addHeader("Description")
+    WIDGET_ROWS.forEach { row ->
+      row.forEach { addCell(it) }
+      nextRow()
     }
-    .use { render(it, area) }
-  Table {
-      addHeader("Widget")
-      addHeader("Category")
-      addHeader("Added")
-      addHeader("Description")
-      WIDGET_ROWS.forEach { row ->
-        row.forEach { addCell(it) }
-        nextRow()
-      }
-      addWidth(Constraint.Percentage(13))
-      addWidth(Constraint.Percentage(13))
-      addWidth(Constraint.Percentage(12))
-      addWidth(Constraint.Fill(1))
-    }
-    .use { render(it, area.inner()) }
+    addWidth(Constraint.Percentage(13))
+    addWidth(Constraint.Percentage(13))
+    addWidth(Constraint.Percentage(12))
+    addWidth(Constraint.Fill(1))
+  }
 }
 
-/** Returns the area one cell inside the border of this rect. */
-private fun Rect.inner(): Rect =
-  Rect(
-    (x + 1u).toUShort(),
-    (y + 1u).toUShort(),
-    maxOf(0, width.toInt() - 2).toUShort(),
-    maxOf(0, height.toInt() - 2).toUShort(),
-  )
+@OptIn(ExperimentalForeignApi::class)
+private fun Frame.renderImageTab(area: Rect, imageState: ImageState?) {
+  block(area) {
+    title = "Image"
+    borders = Borders.all.bits
+  }
+  if (imageState != null) {
+    image(imageState, area.inner())
+  } else {
+    paragraph {
+      text =
+        "Image could not be decoded.\n\nAdd the file to sample-app/ and register it\nin generateResources inside build.gradle.kts."
+      this.area = area.inner()
+    }
+  }
+}

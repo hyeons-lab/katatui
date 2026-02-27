@@ -48,6 +48,8 @@ typedef struct KatatuiFrame KatatuiFrame;
 
 typedef struct KatatuiGauge KatatuiGauge;
 
+typedef struct KatatuiImageState KatatuiImageState;
+
 typedef struct KatatuiLayout KatatuiLayout;
 
 typedef struct KatatuiLineGauge KatatuiLineGauge;
@@ -61,6 +63,8 @@ typedef struct KatatuiParagraph KatatuiParagraph;
 typedef struct KatatuiSparkline KatatuiSparkline;
 
 typedef struct KatatuiTable KatatuiTable;
+
+typedef struct KatatuiTableState KatatuiTableState;
 
 typedef struct KatatuiTabs KatatuiTabs;
 
@@ -92,6 +96,12 @@ struct KatatuiTerminal *katatui_terminal_new(void);
 
 void katatui_terminal_free(struct KatatuiTerminal *terminal);
 
+struct KatatuiTableState *katatui_table_state_new(void);
+
+void katatui_table_state_free(struct KatatuiTableState *state);
+
+void katatui_table_state_select(struct KatatuiTableState *state, int32_t index);
+
 /**
  * `ratatui::init()` already enables raw mode + alternate screen.
  * This function exists for symmetry with the Kotlin API.
@@ -121,7 +131,7 @@ void katatui_frame_render_paragraph(struct KatatuiFrame *frame,
 void katatui_frame_render_list(struct KatatuiFrame *frame,
                                struct KatatuiRect area,
                                const struct KatatuiList *list,
-                               struct KatatuiListState *_state);
+                               struct KatatuiListState *state);
 
 void katatui_frame_render_clear(struct KatatuiFrame *frame,
                                 struct KatatuiRect area,
@@ -149,7 +159,12 @@ void katatui_frame_render_tabs(struct KatatuiFrame *frame,
 
 void katatui_frame_render_table(struct KatatuiFrame *frame,
                                 struct KatatuiRect area,
-                                const struct KatatuiTable *table);
+                                const struct KatatuiTable *table,
+                                struct KatatuiTableState *state);
+
+void katatui_frame_render_image(struct KatatuiFrame *frame,
+                                struct KatatuiRect area,
+                                struct KatatuiImageState *state);
 
 bool katatui_event_poll(uint64_t timeout_ms);
 
@@ -204,6 +219,21 @@ void katatui_gauge_set_style(struct KatatuiGauge *gauge, struct KatatuiStyle sty
 
 void katatui_gauge_set_gauge_style(struct KatatuiGauge *gauge, struct KatatuiStyle style);
 
+/**
+ * Creates image state from a file path.
+ * Uses Unicode half-block rendering, which works in every terminal.
+ * Returns null if the file cannot be opened or decoded.
+ */
+struct KatatuiImageState *katatui_image_state_new(const char *path);
+
+/**
+ * Creates image state from in-memory bytes (PNG, JPEG, GIF, WebP, etc.).
+ * Returns null if the bytes cannot be decoded as a supported image format.
+ */
+struct KatatuiImageState *katatui_image_state_from_bytes(const uint8_t *data, uintptr_t len);
+
+void katatui_image_state_free(struct KatatuiImageState *state);
+
 struct KatatuiLayout *katatui_layout_new(enum KatatuiDirection direction);
 
 void katatui_layout_free(struct KatatuiLayout *layout);
@@ -247,6 +277,8 @@ struct KatatuiParagraph *katatui_paragraph_new(const char *text);
 void katatui_paragraph_free(struct KatatuiParagraph *para);
 
 void katatui_paragraph_set_style(struct KatatuiParagraph *para, struct KatatuiStyle style);
+
+void katatui_paragraph_set_text(struct KatatuiParagraph *para, const char *text);
 
 void katatui_paragraph_set_wrap(struct KatatuiParagraph *para, bool wrap);
 

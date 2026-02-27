@@ -1,10 +1,12 @@
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
   id("katatui-quality")
   alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.skie)
 }
 
 // Proper configuration for accessing :codegen's runtime classpath.
@@ -32,8 +34,20 @@ val rustTriples =
     "mingwX64" to "x86_64-pc-windows-gnu",
   )
 
-// One cargo build task per target (release static lib)
+val isWindows = System.getProperty("os.name").startsWith("Windows")
+
+// One cargo build task per target (release static lib).
+
+// isEnabled is a simple Boolean property (not a lambda), which is configuration-cache safe.
+// Cross-compilation requires toolchains not present in a typical dev setup, so we skip
+// foreign targets locally; CI can enable them by providing the right toolchain.
 rustTriples.forEach { (kotlinTarget, triple) ->
+  val isNativeTarget =
+    when {
+      isMac -> kotlinTarget.startsWith("macos")
+      isWindows -> kotlinTarget.startsWith("mingw")
+      else -> kotlinTarget.startsWith("linux")
+    }
   tasks.register<Exec>("buildKatatuiFfi_$kotlinTarget") {
     group = "rust"
     description = "Build Rust FFI staticlib for $kotlinTarget ($triple)"
@@ -42,6 +56,7 @@ rustTriples.forEach { (kotlinTarget, triple) ->
     outputs.file("../katatui-ffi/target/$triple/release/libkatatui_ffi.a")
     inputs.dir("../katatui-ffi/src")
     inputs.file("../katatui-ffi/Cargo.toml")
+    isEnabled = isNativeTarget
   }
 }
 
@@ -81,11 +96,17 @@ kotlin {
   if (isMac) {
     macosArm64()
     macosX64()
+  } else if (isWindows) {
+    mingwX64()
+  } else {
+    linuxX64()
+    linuxArm64()
   }
-  linuxX64()
-  linuxArm64()
-  mingwX64()
   applyDefaultHierarchyTemplate()
+
+  skie {}
+
+  val xcf = XCFramework("Katatui")
 
   targets.withType<KotlinNativeTarget>().configureEach {
     val triple = rustTriples[name] ?: return@configureEach
@@ -96,10 +117,16 @@ kotlin {
       }
     }
     binaries.all {
-      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/release", "-lkatatui_ffi")
+      val buildType = if (optimized) "release" else "debug"
+      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/$buildType", "-lkatatui_ffi")
       if (name.contains("mingw", ignoreCase = true)) {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }
+    }
+    binaries.framework {
+      baseName = "Katatui"
+      isStatic = true
+      xcf.add(this)
     }
   }
 
@@ -113,6 +140,8 @@ kotlin {
 
   compilerOptions { allWarningsAsErrors.set(true) }
 }
+
+skie {}
 
 // Wire cargo build + header → before cinterop task for each target.
 // Cinterop task name format: cinterop<InteropName><TargetName> e.g. cinteropKatatuiMacosArm64

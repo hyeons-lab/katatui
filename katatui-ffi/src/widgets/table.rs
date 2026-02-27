@@ -9,6 +9,10 @@ pub struct KatatuiTable {
     pub style: Option<KatatuiStyle>,
 }
 
+pub struct KatatuiTableState {
+    pub(crate) inner: ratatui::widgets::TableState,
+}
+
 pub fn build_table(t: &KatatuiTable) -> ratatui::widgets::Table<'static> {
     use ratatui::widgets::{Cell, Row, Table};
     let header = Row::new(t.headers.iter().map(|h| Cell::new(h.clone())).collect::<Vec<_>>());
@@ -41,6 +45,30 @@ pub extern "C" fn katatui_table_new() -> *mut KatatuiTable {
 pub extern "C" fn katatui_table_free(table: *mut KatatuiTable) {
     if !table.is_null() {
         unsafe { drop(Box::from_raw(table)) };
+    }
+}
+
+pub fn katatui_table_state_new() -> *mut KatatuiTableState {
+    Box::into_raw(Box::new(KatatuiTableState {
+        inner: ratatui::widgets::TableState::default(),
+    }))
+}
+
+pub fn katatui_table_state_free(state: *mut KatatuiTableState) {
+    if !state.is_null() {
+        unsafe { drop(Box::from_raw(state)) };
+    }
+}
+
+pub fn katatui_table_state_select(state: *mut KatatuiTableState, index: i32) {
+    if state.is_null() {
+        return;
+    }
+    let s = unsafe { &mut *state };
+    if index < 0 {
+        s.inner.select(None);
+    } else {
+        s.inner.select(Some(index as usize));
     }
 }
 

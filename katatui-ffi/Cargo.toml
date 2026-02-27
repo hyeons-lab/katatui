@@ -7,8 +7,10 @@ edition = "2021"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-ratatui   = { version = "0.30", features = ["crossterm"] }
-crossterm = "0.28"
+ratatui        = { version = "0.30", features = ["crossterm"] }
+crossterm      = "0.28"
+ratatui-image  = { version = "10", default-features = false }
+image          = "0.25"
 
 [build-dependencies]
 cbindgen = "0.27"

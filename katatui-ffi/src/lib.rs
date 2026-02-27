@@ -41,6 +41,24 @@ pub extern "C" fn katatui_terminal_free(terminal: *mut KatatuiTerminal) {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn katatui_table_state_new() -> *mut widgets::table::KatatuiTableState {
+    widgets::table::katatui_table_state_new()
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_table_state_free(state: *mut widgets::table::KatatuiTableState) {
+    widgets::table::katatui_table_state_free(state);
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_table_state_select(
+    state: *mut widgets::table::KatatuiTableState,
+    index: i32,
+) {
+    widgets::table::katatui_table_state_select(state, index);
+}
+
 /// `ratatui::init()` already enables raw mode + alternate screen.
 /// This function exists for symmetry with the Kotlin API.
 #[no_mangle]
@@ -145,14 +163,20 @@ pub extern "C" fn katatui_frame_render_list(
     frame: *mut KatatuiFrame,
     area: KatatuiRect,
     list: *const widgets::list::KatatuiList,
-    _state: *mut widgets::list::KatatuiListState,
+    state: *mut widgets::list::KatatuiListState,
 ) {
     if frame.is_null() || list.is_null() {
         return;
     }
     let widget = build_list(unsafe { &*list });
-    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
-        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        if state.is_null() {
+            rf.render_widget(widget, area.into());
+        } else {
+            let s = unsafe { &mut *state };
+            rf.render_stateful_widget(widget, area.into(), &mut s.inner);
+        }
+    });
     unsafe { (*frame).ops.push(op) };
 }
 
@@ -251,13 +275,40 @@ pub extern "C" fn katatui_frame_render_table(
     frame: *mut KatatuiFrame,
     area: KatatuiRect,
     table: *const widgets::table::KatatuiTable,
+    state: *mut widgets::table::KatatuiTableState,
 ) {
     if frame.is_null() || table.is_null() {
         return;
     }
     let widget = build_table(unsafe { &*table });
-    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
-        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        if state.is_null() {
+            rf.render_widget(widget, area.into());
+        } else {
+            let s = unsafe { &mut *state };
+            rf.render_stateful_widget(widget, area.into(), &mut s.inner);
+        }
+    });
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_image(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    state: *mut widgets::image::KatatuiImageState,
+) {
+    if frame.is_null() || state.is_null() {
+        return;
+    }
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        let s = unsafe { &mut *state };
+        rf.render_stateful_widget(
+            ratatui_image::StatefulImage::default(),
+            area.into(),
+            &mut s.protocol,
+        );
+    });
     unsafe { (*frame).ops.push(op) };
 }
 

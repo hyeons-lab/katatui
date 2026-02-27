@@ -26,47 +26,20 @@ class HeaderParser {
       when {
         // Opaque struct typedef: "typedef struct Foo Foo;"
         line.matches(Regex("""typedef struct (\w+) (\w+);""")) -> {
-          val m = Regex("""typedef struct (\w+) (\w+);""").find(line)!!
-          opaqueTypes += m.groupValues[2]
+          val m = Regex("""typedef struct (\w+) (\w+);""").find(line)
+          if (m != null) {
+            opaqueTypes += m.groupValues[2]
+          }
         }
         // Start of named struct: "typedef struct Foo {"
         line.matches(Regex("""typedef struct \{""")) ||
           line.matches(Regex("""typedef struct \w+ \{""")) -> {
-          val structLines = mutableListOf<String>()
-          i++
-          while (i < lines.size && !lines[i].trim().startsWith("}")) {
-            structLines += lines[i].trim()
-            i++
-          }
-          // "} KatatuiRect;"
-          val nameLine = lines[i].trim()
-          val name = Regex("""}\s*(\w+);""").find(nameLine)?.groupValues?.get(1)
-          if (name != null) {
-            val fields =
-              structLines
-                .filter { it.isNotBlank() && !it.startsWith("//") }
-                .mapNotNull { parseField(it) }
-            structs[name] = CStruct(name, fields)
-          }
+          i = parseStruct(lines, i)
         }
         // Start of enum: "typedef enum {"
         line.matches(Regex("""typedef enum \{""")) ||
           line.matches(Regex("""typedef enum \w+ \{""")) -> {
-          val variantLines = mutableListOf<String>()
-          i++
-          while (i < lines.size && !lines[i].trim().startsWith("}")) {
-            variantLines += lines[i].trim()
-            i++
-          }
-          val nameLine = lines[i].trim()
-          val name = Regex("""}\s*(\w+);""").find(nameLine)?.groupValues?.get(1)
-          if (name != null) {
-            val variants =
-              variantLines
-                .filter { it.isNotBlank() && !it.startsWith("//") }
-                .mapNotNull { parseVariant(it) }
-            enums[name] = CEnum(name, variants)
-          }
+          i = parseEnum(lines, i)
         }
         // Function declaration (not typedef, not comment)
         line.contains("katatui_") && line.endsWith(";") && !line.startsWith("//") -> {
@@ -75,6 +48,45 @@ class HeaderParser {
       }
       i++
     }
+  }
+
+  private fun parseStruct(lines: List<String>, startIndex: Int): Int {
+    var i = startIndex
+    val structLines = mutableListOf<String>()
+    i++
+    while (i < lines.size && !lines[i].trim().startsWith("}")) {
+      structLines += lines[i].trim()
+      i++
+    }
+    // "} KatatuiRect;"
+    val nameLine = lines[i].trim()
+    val name = Regex("""}\s*(\w+);""").find(nameLine)?.groupValues?.get(1)
+    if (name != null) {
+      val fields =
+        structLines.filter { it.isNotBlank() && !it.startsWith("//") }.mapNotNull { parseField(it) }
+      structs[name] = CStruct(name, fields)
+    }
+    return i
+  }
+
+  private fun parseEnum(lines: List<String>, startIndex: Int): Int {
+    var i = startIndex
+    val variantLines = mutableListOf<String>()
+    i++
+    while (i < lines.size && !lines[i].trim().startsWith("}")) {
+      variantLines += lines[i].trim()
+      i++
+    }
+    val nameLine = lines[i].trim()
+    val name = Regex("""}\s*(\w+);""").find(nameLine)?.groupValues?.get(1)
+    if (name != null) {
+      val variants =
+        variantLines
+          .filter { it.isNotBlank() && !it.startsWith("//") }
+          .mapNotNull { parseVariant(it) }
+      enums[name] = CEnum(name, variants)
+    }
+    return i
   }
 
   private fun parseField(line: String): CField? {
@@ -93,8 +105,8 @@ class HeaderParser {
     val eqIdx = clean.indexOf('=')
     if (eqIdx < 0) return null
     val name = clean.substring(0, eqIdx).trim()
-    val value = clean.substring(eqIdx + 1).trim().toIntOrNull() ?: return null
-    return CVariant(name, value)
+    val value = clean.substring(eqIdx + 1).trim().toIntOrNull()
+    return if (value != null) CVariant(name, value) else null
   }
 
   private fun parseFunction(line: String): CFunction? {
@@ -133,7 +145,17 @@ class HeaderParser {
   }
 
   fun widgetGroups(): List<WidgetGroup> {
-    val excluded = setOf("terminal", "event", "frame", "layout", "list_state")
+    val excluded =
+      setOf(
+        "terminal",
+        "event",
+        "frame",
+        "layout",
+        "list_state",
+        "image_state",
+        "table_state",
+        "state",
+      )
     // "KatatuiLineGauge" → "line_gauge", "KatatuiBlock" → "block"
     val prefixToCName =
       opaqueTypes
@@ -141,16 +163,24 @@ class HeaderParser {
         .associateBy { cName ->
           cName.removePrefix("Katatui").replace(Regex("(?<=[a-z])([A-Z])"), "_$1").lowercase()
         }
+        .filter { it.key !in excluded }
+
+    println("Prefixes to C names: ${prefixToCName.keys}")
+
     val grouped = mutableMapOf<String, MutableList<CFunction>>()
-    for (fn in functions) {
-      if (!fn.name.startsWith("katatui_")) continue
+    for (fn in functions.filter { it.name.startsWith("katatui_") }) {
       val body = fn.name.removePrefix("katatui_")
       val prefix =
         prefixToCName.keys
           .filter { p -> body == p || body.startsWith("${p}_") }
           .maxByOrNull { it.length }
-      if (prefix != null && prefix !in excluded) {
-        grouped.getOrPut(prefix) { mutableListOf() }.add(fn)
+
+      if (prefix != null) {
+        val rest = body.removePrefix(prefix).removePrefix("_")
+        println("Fn: ${fn.name}, body: $body, prefix: $prefix, rest: $rest")
+        if (!rest.startsWith("state")) {
+          grouped.getOrPut(prefix) { mutableListOf() }.add(fn)
+        }
       }
     }
     return grouped.map { (prefix, fns) ->

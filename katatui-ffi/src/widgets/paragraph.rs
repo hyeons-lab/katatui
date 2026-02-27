@@ -49,6 +49,19 @@ pub extern "C" fn katatui_paragraph_set_style(para: *mut KatatuiParagraph, style
 }
 
 #[no_mangle]
+pub extern "C" fn katatui_paragraph_set_text(para: *mut KatatuiParagraph, text: *const std::ffi::c_char) {
+    if para.is_null() {
+        return;
+    }
+    let t = if text.is_null() {
+        String::new()
+    } else {
+        unsafe { CStr::from_ptr(text) }.to_string_lossy().into_owned()
+    };
+    unsafe { (*para).text = t };
+}
+
+#[no_mangle]
 pub extern "C" fn katatui_paragraph_set_wrap(para: *mut KatatuiParagraph, wrap: bool) {
     if para.is_null() {
         return;

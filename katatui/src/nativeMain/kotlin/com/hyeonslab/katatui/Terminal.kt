@@ -16,6 +16,10 @@ class Terminal : AutoCloseable {
   internal val ptr: CPointer<KatatuiTerminal> =
     checkNotNull(katatui_terminal_new()) { "katatui_terminal_new() returned null" }
 
+  init {
+    katatui_terminal_init(ptr)
+  }
+
   override fun close() {
     try {
       restore()
@@ -23,11 +27,15 @@ class Terminal : AutoCloseable {
       katatui_terminal_free(ptr)
     }
   }
+
+  companion object {
+    operator fun invoke(block: Terminal.() -> Unit) {
+      Terminal().use(block)
+    }
+  }
 }
 
-fun Terminal.init() {
-  katatui_terminal_init(ptr)
-}
+fun terminal(block: Terminal.() -> Unit) = Terminal(block)
 
 fun Terminal.restore() {
   katatui_terminal_restore(ptr)
