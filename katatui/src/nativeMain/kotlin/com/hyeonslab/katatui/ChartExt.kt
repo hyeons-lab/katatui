@@ -2,17 +2,17 @@
 
 package com.hyeonslab.katatui
 
-import com.hyeonslab.katatui.cinterop.Bar
 import com.hyeonslab.katatui.cinterop.KatatuiGraphType
+import com.hyeonslab.katatui.cinterop.KatatuiGraphType_Bar
+import com.hyeonslab.katatui.cinterop.KatatuiGraphType_Line
+import com.hyeonslab.katatui.cinterop.KatatuiGraphType_Scatter
 import com.hyeonslab.katatui.cinterop.KatatuiMarker
-import com.hyeonslab.katatui.cinterop.Line
-import com.hyeonslab.katatui.cinterop.MarkerBar
-import com.hyeonslab.katatui.cinterop.MarkerBlock as Block
-import com.hyeonslab.katatui.cinterop.MarkerBraille as Braille
-import com.hyeonslab.katatui.cinterop.MarkerDot as Dot
-import com.hyeonslab.katatui.cinterop.MarkerHalfBlock as HalfBlock
-import com.hyeonslab.katatui.cinterop.MarkerQuadrant as Quadrant
-import com.hyeonslab.katatui.cinterop.Scatter
+import com.hyeonslab.katatui.cinterop.KatatuiMarker_Bar
+import com.hyeonslab.katatui.cinterop.KatatuiMarker_Block
+import com.hyeonslab.katatui.cinterop.KatatuiMarker_Braille
+import com.hyeonslab.katatui.cinterop.KatatuiMarker_Dot
+import com.hyeonslab.katatui.cinterop.KatatuiMarker_HalfBlock
+import com.hyeonslab.katatui.cinterop.KatatuiMarker_Quadrant
 import com.hyeonslab.katatui.cinterop.katatui_chart_commit_dataset
 import com.hyeonslab.katatui.cinterop.katatui_chart_dataset_point
 import com.hyeonslab.katatui.cinterop.katatui_chart_set_dataset_graph_type
@@ -27,21 +27,6 @@ import com.hyeonslab.katatui.widgets.Style
 import com.hyeonslab.katatui.widgets.toCValue
 import kotlinx.cinterop.ExperimentalForeignApi
 
-enum class GraphType {
-  Scatter,
-  Line,
-  Bar,
-}
-
-enum class ChartMarker {
-  Dot,
-  Block,
-  Bar,
-  Braille,
-  HalfBlock,
-  Quadrant,
-}
-
 /** Adds a data point (x, y) to the current dataset being built. */
 fun Chart.datasetPoint(x: Double, y: Double) {
   katatui_chart_dataset_point(ptr, x, y)
@@ -49,27 +34,12 @@ fun Chart.datasetPoint(x: Double, y: Double) {
 
 /** Sets the graph type of the current dataset. */
 fun Chart.setDatasetGraphType(graphType: GraphType) {
-  val cType: KatatuiGraphType =
-    when (graphType) {
-      GraphType.Scatter -> Scatter
-      GraphType.Line -> Line
-      GraphType.Bar -> Bar
-    }
-  katatui_chart_set_dataset_graph_type(ptr, cType)
+  katatui_chart_set_dataset_graph_type(ptr, graphType.toCGraphType())
 }
 
 /** Sets the marker of the current dataset. */
 fun Chart.setDatasetMarker(marker: ChartMarker) {
-  val cMarker: KatatuiMarker =
-    when (marker) {
-      ChartMarker.Dot -> Dot
-      ChartMarker.Block -> Block
-      ChartMarker.Bar -> MarkerBar
-      ChartMarker.Braille -> Braille
-      ChartMarker.HalfBlock -> HalfBlock
-      ChartMarker.Quadrant -> Quadrant
-    }
-  katatui_chart_set_dataset_marker(ptr, cMarker)
+  katatui_chart_set_dataset_marker(ptr, marker.toCMarker())
 }
 
 /** Sets the style of the current dataset. */
@@ -103,3 +73,35 @@ fun Chart.setYStyle(style: Style) {
 fun Chart.setStyle(style: Style) {
   katatui_chart_set_style(ptr, style.toCValue())
 }
+
+enum class GraphType {
+  Scatter,
+  Line,
+  Bar,
+}
+
+enum class ChartMarker {
+  Dot,
+  Block,
+  Bar,
+  Braille,
+  HalfBlock,
+  Quadrant,
+}
+
+internal fun GraphType.toCGraphType(): KatatuiGraphType =
+  when (this) {
+    GraphType.Scatter -> KatatuiGraphType_Scatter
+    GraphType.Line -> KatatuiGraphType_Line
+    GraphType.Bar -> KatatuiGraphType_Bar
+  }
+
+internal fun ChartMarker.toCMarker(): KatatuiMarker =
+  when (this) {
+    ChartMarker.Dot -> KatatuiMarker_Dot
+    ChartMarker.Block -> KatatuiMarker_Block
+    ChartMarker.Bar -> KatatuiMarker_Bar
+    ChartMarker.Braille -> KatatuiMarker_Braille
+    ChartMarker.HalfBlock -> KatatuiMarker_HalfBlock
+    ChartMarker.Quadrant -> KatatuiMarker_Quadrant
+  }

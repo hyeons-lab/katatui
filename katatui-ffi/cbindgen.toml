@@ -7,4 +7,4 @@ rename_args = "snake_case"
 rename_fields = "snake_case"
 
 [enum]
-rename_variants = "ScreamingSnakeCase"
+prefix_with_name = true

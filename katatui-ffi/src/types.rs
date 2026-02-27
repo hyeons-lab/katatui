@@ -77,29 +77,27 @@ pub struct KatatuiConstraint {
     pub value: u16,
 }
 
-/// Marker character for canvas/chart data points.
-/// Variants are prefixed with `Marker` to avoid C global-enum namespace collisions.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub enum KatatuiMarker {
-    MarkerDot = 0,
-    MarkerBlock = 1,
-    MarkerBar = 2,
-    MarkerBraille = 3,
-    MarkerHalfBlock = 4,
-    MarkerQuadrant = 5,
+    Dot = 0,
+    Block = 1,
+    Bar = 2,
+    Braille = 3,
+    HalfBlock = 4,
+    Quadrant = 5,
 }
 
 impl From<KatatuiMarker> for ratatui::symbols::Marker {
     fn from(m: KatatuiMarker) -> Self {
         use ratatui::symbols::Marker;
         match m {
-            KatatuiMarker::MarkerDot => Marker::Dot,
-            KatatuiMarker::MarkerBlock => Marker::Block,
-            KatatuiMarker::MarkerBar => Marker::Bar,
-            KatatuiMarker::MarkerBraille => Marker::Braille,
-            KatatuiMarker::MarkerHalfBlock => Marker::HalfBlock,
-            KatatuiMarker::MarkerQuadrant => Marker::Quadrant,
+            KatatuiMarker::Dot => Marker::Dot,
+            KatatuiMarker::Block => Marker::Block,
+            KatatuiMarker::Bar => Marker::Bar,
+            KatatuiMarker::Braille => Marker::Braille,
+            KatatuiMarker::HalfBlock => Marker::HalfBlock,
+            KatatuiMarker::Quadrant => Marker::Quadrant,
         }
     }
 }

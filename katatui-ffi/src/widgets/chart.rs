@@ -109,7 +109,7 @@ pub extern "C" fn katatui_chart_new() -> *mut KatatuiChart {
         current_name: String::new(),
         current_data: Vec::new(),
         current_graph_type: KatatuiGraphType::Line,
-        current_marker: KatatuiMarker::MarkerDot,
+        current_marker: KatatuiMarker::Dot,
         current_style: None,
         x_axis: AxisBuilder::default(),
         y_axis: AxisBuilder::default(),
@@ -200,7 +200,7 @@ pub extern "C" fn katatui_chart_commit_dataset(chart: *mut KatatuiChart) {
         style: c.current_style.take(),
     });
     c.current_graph_type = KatatuiGraphType::Line;
-    c.current_marker = KatatuiMarker::MarkerDot;
+    c.current_marker = KatatuiMarker::Dot;
 }
 
 // ---- X Axis ----

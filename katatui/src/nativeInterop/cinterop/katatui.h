@@ -4,84 +4,73 @@
 #include <stdlib.h>
 
 typedef enum KatatuiColor {
-  Reset = 0,
-  Black = 1,
-  Red = 2,
-  Green = 3,
-  Yellow = 4,
-  Blue = 5,
-  Magenta = 6,
-  Cyan = 7,
-  Gray = 8,
-  DarkGray = 9,
-  LightRed = 10,
-  LightGreen = 11,
-  LightYellow = 12,
-  LightBlue = 13,
-  LightMagenta = 14,
-  LightCyan = 15,
-  White = 16,
-  Rgb = 17,
-  Indexed = 18,
+  KatatuiColor_Reset = 0,
+  KatatuiColor_Black = 1,
+  KatatuiColor_Red = 2,
+  KatatuiColor_Green = 3,
+  KatatuiColor_Yellow = 4,
+  KatatuiColor_Blue = 5,
+  KatatuiColor_Magenta = 6,
+  KatatuiColor_Cyan = 7,
+  KatatuiColor_Gray = 8,
+  KatatuiColor_DarkGray = 9,
+  KatatuiColor_LightRed = 10,
+  KatatuiColor_LightGreen = 11,
+  KatatuiColor_LightYellow = 12,
+  KatatuiColor_LightBlue = 13,
+  KatatuiColor_LightMagenta = 14,
+  KatatuiColor_LightCyan = 15,
+  KatatuiColor_White = 16,
+  KatatuiColor_Rgb = 17,
+  KatatuiColor_Indexed = 18,
 } KatatuiColor;
 
 typedef enum KatatuiConstraintKind {
-  Length = 0,
-  Percentage = 1,
-  Min = 2,
-  Max = 3,
-  Fill = 4,
+  KatatuiConstraintKind_Length = 0,
+  KatatuiConstraintKind_Percentage = 1,
+  KatatuiConstraintKind_Min = 2,
+  KatatuiConstraintKind_Max = 3,
+  KatatuiConstraintKind_Fill = 4,
 } KatatuiConstraintKind;
 
 typedef enum KatatuiDirection {
-  Horizontal = 0,
-  Vertical = 1,
+  KatatuiDirection_Horizontal = 0,
+  KatatuiDirection_Vertical = 1,
 } KatatuiDirection;
 
 typedef enum KatatuiGraphType {
-  Scatter = 0,
-  Line = 1,
-  Bar = 2,
+  KatatuiGraphType_Scatter = 0,
+  KatatuiGraphType_Line = 1,
+  KatatuiGraphType_Bar = 2,
 } KatatuiGraphType;
 
 typedef enum KatatuiLogoSize {
-  Tiny = 0,
-  Small = 1,
+  KatatuiLogoSize_Tiny = 0,
+  KatatuiLogoSize_Small = 1,
 } KatatuiLogoSize;
 
-/**
- * Marker character for canvas/chart data points.
- * Variants are prefixed with `Marker` to avoid C global-enum namespace collisions.
- */
 typedef enum KatatuiMarker {
-  MarkerDot = 0,
-  MarkerBlock = 1,
-  MarkerBar = 2,
-  MarkerBraille = 3,
-  MarkerHalfBlock = 4,
-  MarkerQuadrant = 5,
+  KatatuiMarker_Dot = 0,
+  KatatuiMarker_Block = 1,
+  KatatuiMarker_Bar = 2,
+  KatatuiMarker_Braille = 3,
+  KatatuiMarker_HalfBlock = 4,
+  KatatuiMarker_Quadrant = 5,
 } KatatuiMarker;
 
 /**
  * The mascot's eye state.  ratatui 0.30 `MascotEyeColor` only has `Default` and `Red`.
- * Variants are prefixed with `Eye` to avoid C global-enum namespace collisions.
  */
 typedef enum KatatuiMascotEyeColor {
-  /**
-   * Eye open (default)
-   */
-  EyeDefault = 0,
-  /**
-   * Eye blinking / red
-   */
-  EyeRed = 1,
+  KatatuiMascotEyeColor_Default = 0,
+  KatatuiMascotEyeColor_Red = 1,
 } KatatuiMascotEyeColor;
 
 typedef enum KatatuiScrollbarOrientation {
-  VerticalRight = 0,
-  VerticalLeft = 1,
-  HorizontalBottom = 2,
-  HorizontalTop = 3,
+  KatatuiScrollbarOrientation_VerticalRight = 0,
+  KatatuiScrollbarOrientation_VerticalLeft = 1,
+  KatatuiScrollbarOrientation_HorizontalBottom = 2,
+  KatatuiScrollbarOrientation_HorizontalTop = 3,
 } KatatuiScrollbarOrientation;
 
 typedef struct KatatuiBarChart KatatuiBarChart;
@@ -179,7 +168,7 @@ void katatui_table_state_free(struct KatatuiTableState *state);
 
 void katatui_table_state_select(struct KatatuiTableState *state, int32_t index);
 
-void katatui_terminal_restore(struct KatatuiTerminal *_terminal);
+void katatui_terminal_restore(struct KatatuiTerminal *terminal);
 
 struct KatatuiFrame *katatui_terminal_begin_draw(struct KatatuiTerminal *terminal);
 

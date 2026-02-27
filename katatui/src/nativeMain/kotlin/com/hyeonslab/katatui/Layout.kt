@@ -3,17 +3,17 @@
 package com.hyeonslab.katatui
 
 import cnames.structs.KatatuiLayout
-import com.hyeonslab.katatui.cinterop.Fill
-import com.hyeonslab.katatui.cinterop.Horizontal
 import com.hyeonslab.katatui.cinterop.KatatuiConstraint
 import com.hyeonslab.katatui.cinterop.KatatuiConstraintKind
+import com.hyeonslab.katatui.cinterop.KatatuiConstraintKind_Fill
+import com.hyeonslab.katatui.cinterop.KatatuiConstraintKind_Length
+import com.hyeonslab.katatui.cinterop.KatatuiConstraintKind_Max
+import com.hyeonslab.katatui.cinterop.KatatuiConstraintKind_Min
+import com.hyeonslab.katatui.cinterop.KatatuiConstraintKind_Percentage
 import com.hyeonslab.katatui.cinterop.KatatuiDirection
+import com.hyeonslab.katatui.cinterop.KatatuiDirection_Horizontal
+import com.hyeonslab.katatui.cinterop.KatatuiDirection_Vertical
 import com.hyeonslab.katatui.cinterop.KatatuiRect
-import com.hyeonslab.katatui.cinterop.Length
-import com.hyeonslab.katatui.cinterop.Max
-import com.hyeonslab.katatui.cinterop.Min
-import com.hyeonslab.katatui.cinterop.Percentage
-import com.hyeonslab.katatui.cinterop.Vertical
 import com.hyeonslab.katatui.cinterop.katatui_layout_add_constraint
 import com.hyeonslab.katatui.cinterop.katatui_layout_free
 import com.hyeonslab.katatui.cinterop.katatui_layout_new
@@ -42,14 +42,8 @@ object Layout {
 class LayoutBuilder
 internal constructor(private val dir: Direction, private val constraints: Array<out Constraint>) {
   fun split(area: Rect): kotlin.collections.List<Rect> {
-    // C enum constants are package-level values in cinterop (not class members)
-    val cDir: KatatuiDirection =
-      when (dir) {
-        Direction.Horizontal -> Horizontal
-        Direction.Vertical -> Vertical
-      }
     val layout: CPointer<KatatuiLayout> =
-      checkNotNull(katatui_layout_new(cDir)) { "katatui_layout_new() returned null" }
+      checkNotNull(katatui_layout_new(dir.toCDirection())) { "katatui_layout_new() returned null" }
     try {
       constraints.forEach { c ->
         val cConstraint =
@@ -76,11 +70,17 @@ internal constructor(private val dir: Direction, private val constraints: Array<
   }
 }
 
+internal fun Direction.toCDirection(): KatatuiDirection =
+  when (this) {
+    Direction.Horizontal -> KatatuiDirection_Horizontal
+    Direction.Vertical -> KatatuiDirection_Vertical
+  }
+
 internal fun Constraint.toCKind(): KatatuiConstraintKind =
   when (this) {
-    is Constraint.Length -> Length
-    is Constraint.Percentage -> Percentage
-    is Constraint.Min -> Min
-    is Constraint.Max -> Max
-    is Constraint.Fill -> Fill
+    is Constraint.Length -> KatatuiConstraintKind_Length
+    is Constraint.Percentage -> KatatuiConstraintKind_Percentage
+    is Constraint.Min -> KatatuiConstraintKind_Min
+    is Constraint.Max -> KatatuiConstraintKind_Max
+    is Constraint.Fill -> KatatuiConstraintKind_Fill
   }

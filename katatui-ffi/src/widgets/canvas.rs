@@ -32,7 +32,7 @@ pub extern "C" fn katatui_canvas_new() -> *mut KatatuiCanvas {
         x_bounds_max: 100.0,
         y_bounds_min: 0.0,
         y_bounds_max: 100.0,
-        marker: KatatuiMarker::MarkerBraille,
+        marker: KatatuiMarker::Braille,
         commands: Vec::new(),
         current_points: Vec::new(),
         current_points_color: ratatui::style::Color::Reset,

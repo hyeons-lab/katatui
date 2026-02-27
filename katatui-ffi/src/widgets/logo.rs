@@ -39,21 +39,18 @@ pub extern "C" fn katatui_logo_set_size(logo: *mut KatatuiLogo, size: KatatuiLog
 // ---- Mascot ----
 
 /// The mascot's eye state.  ratatui 0.30 `MascotEyeColor` only has `Default` and `Red`.
-/// Variants are prefixed with `Eye` to avoid C global-enum namespace collisions.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub enum KatatuiMascotEyeColor {
-    /// Eye open (default)
-    EyeDefault = 0,
-    /// Eye blinking / red
-    EyeRed = 1,
+    Default = 0,
+    Red = 1,
 }
 
 impl From<KatatuiMascotEyeColor> for ratatui::widgets::MascotEyeColor {
     fn from(c: KatatuiMascotEyeColor) -> Self {
         match c {
-            KatatuiMascotEyeColor::EyeDefault => ratatui::widgets::MascotEyeColor::Default,
-            KatatuiMascotEyeColor::EyeRed => ratatui::widgets::MascotEyeColor::Red,
+            KatatuiMascotEyeColor::Default => ratatui::widgets::MascotEyeColor::Default,
+            KatatuiMascotEyeColor::Red => ratatui::widgets::MascotEyeColor::Red,
         }
     }
 }
@@ -68,7 +65,7 @@ pub fn build_mascot(m: &KatatuiMascot) -> ratatui::widgets::RatatuiMascot {
 
 #[no_mangle]
 pub extern "C" fn katatui_mascot_new() -> *mut KatatuiMascot {
-    Box::into_raw(Box::new(KatatuiMascot { eye_color: KatatuiMascotEyeColor::EyeDefault }))
+    Box::into_raw(Box::new(KatatuiMascot { eye_color: KatatuiMascotEyeColor::Default }))
 }
 
 #[no_mangle]

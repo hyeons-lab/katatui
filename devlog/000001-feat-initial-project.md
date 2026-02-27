@@ -240,6 +240,39 @@ HEAD — chore: update devlog
 **C global enum namespace collisions:** KatatuiMarker::Bar conflicted with KatatuiGraphType::Bar, and KatatuiMascotEyeColor::Red with KatatuiColor::Red in katatui.h. Import aliases can't fix C-level redefinition errors. Fixed by prefixing KatatuiMarker variants (MarkerDot…MarkerQuadrant) and KatatuiMascotEyeColor variants (EyeDefault, EyeRed); used import aliases in Kotlin extension files to restore readability.
 **internal Style.toCValue() not auto-imported:** The extension function is internal to com.hyeonslab.katatui.widgets; callers in com.hyeonslab.katatui must add `import com.hyeonslab.katatui.widgets.toCValue` explicitly. Pattern established in BlockExt.kt but not followed in the new files until compile error was observed.
 
+## What Changed (session 10 — consistent C enum prefixing)
+
+2026-02-27T15:05-0800 katatui-ffi/cbindgen.toml — replaced `rename_variants = "ScreamingSnakeCase"` (no-op) with `prefix_with_name = true`; all C enum variants now namespaced as `KatatuiXxx_Variant`
+2026-02-27T15:05-0800 katatui-ffi/build.rs — added `cargo:rerun-if-changed=cbindgen.toml`; explicitly loads cbindgen.toml via `Config::from_file()` and passes it via `.with_config()`; removed `.with_language()` since language is already set in the toml
+2026-02-27T15:05-0800 katatui-ffi/src/types.rs — reverted KatatuiMarker variants: MarkerDot/MarkerBlock/… → Dot/Block/…; updated From<KatatuiMarker> match arms; removed workaround doc comment
+2026-02-27T15:05-0800 katatui-ffi/src/widgets/logo.rs — reverted KatatuiMascotEyeColor variants: EyeDefault/EyeRed → Default/Red; updated From impl and constructor default; removed workaround doc comment
+2026-02-27T15:05-0800 katatui-ffi/src/widgets/canvas.rs — KatatuiMarker::MarkerBraille → KatatuiMarker::Braille
+2026-02-27T15:05-0800 katatui-ffi/src/widgets/chart.rs — KatatuiMarker::MarkerDot (×2) → KatatuiMarker::Dot
+2026-02-27T15:05-0800 katatui/src/nativeInterop/cinterop/katatui.h — regenerated; all enum variants now carry type prefix (e.g. KatatuiMarker_Dot, KatatuiColor_Reset)
+2026-02-27T15:05-0800 katatui/src/nativeMain/kotlin/.../StyleNative.kt — replaced bare cinterop imports with KatatuiColor_Xxx imports (unaliased); updated toColorEnum() and toCValue() bodies to use full names
+2026-02-27T15:05-0800 katatui/src/nativeMain/kotlin/.../Layout.kt — replaced aliased imports with KatatuiDirection_Xxx/KatatuiConstraintKind_Xxx; extracted toCDirection() and kept toCKind() as internal fun; Layout object moved to top of file per naming convention
+2026-02-27T15:05-0800 katatui/src/nativeMain/kotlin/.../CanvasExt.kt — KatatuiMarker_Xxx imports (unaliased); extracted CanvasMarker.toCMarker(); Canvas extensions moved to top of file
+2026-02-27T15:05-0800 katatui/src/nativeMain/kotlin/.../ChartExt.kt — KatatuiGraphType_Xxx/KatatuiMarker_Xxx imports (unaliased); extracted GraphType.toCGraphType() and ChartMarker.toCMarker(); Chart extensions moved to top of file
+2026-02-27T15:05-0800 katatui/src/nativeMain/kotlin/.../LogoExt.kt — KatatuiLogoSize_Xxx/KatatuiMascotEyeColor_Xxx imports (unaliased); extracted LogoSize.toCLogoSize() and MascotEyeColor.toCEyeColor(); Logo/Mascot extensions moved to top of file
+2026-02-27T15:05-0800 katatui/src/nativeMain/kotlin/.../ScrollbarExt.kt — KatatuiScrollbarOrientation_Xxx imports (unaliased); extracted ScrollbarOrientation.toCOrientation(); Scrollbar extensions moved to top of file
+2026-02-27T15:05-0800 katatui/src/nativeTest/kotlin/.../widgets/StyleNativeTest.kt — updated imports to KatatuiColor_Xxx (unaliased); updated assertEquals call-sites to use full names
+2026-02-27T15:05-0800 katatui/src/nativeTest/kotlin/.../EnumMappingTest.kt — new; 35 tests covering all .toCXxx() conversion functions (Direction, Constraint, CanvasMarker, GraphType, ChartMarker, LogoSize, MascotEyeColor, ScrollbarOrientation)
+
+## Decisions (session 10)
+
+2026-02-27T15:05-0800 prefix_with_name requires explicit Config loading — cbindgen's Builder::with_crate() does call Config::from_root(), but the toml settings were silently ignored because the builder chain was not actually applying them (confirmed: old rename_variants was also a no-op). Fix: load config explicitly with Config::from_file() and Builder::with_config(); add cargo:rerun-if-changed=cbindgen.toml
+2026-02-27T15:05-0800 Unaliased imports for C enum values — using full KatatuiXxx_Variant names at call sites (no `as Alias`) makes the enum origin explicit and avoids maintaining a mapping between short aliases and generated names; conversion functions (.toCXxx()) encapsulate the mapping in one place
+2026-02-27T15:05-0800 File naming convention — for entity-named files (Layout.kt), the primary entity (Layout object) is defined first, with helper extensions below; for extension files (*Ext.kt), the extensions on the namesake type come first, supporting enums and converters below
+
+## Issues (session 10)
+
+**cbindgen.toml settings silently ignored by build.rs:** The Builder API's with_crate() was supposed to auto-load cbindgen.toml via Config::from_root(), but the settings (including the pre-existing rename_variants = "ScreamingSnakeCase") were never applied. Root cause unclear; fixed definitively by calling Config::from_file() explicitly and passing via with_config().
+
+## Commits
+
+3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
+HEAD — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
+
 ## Next Steps
 
 - Push and update PR #1
