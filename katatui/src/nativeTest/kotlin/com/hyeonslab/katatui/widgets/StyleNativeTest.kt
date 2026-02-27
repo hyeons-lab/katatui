@@ -2,7 +2,9 @@ package com.hyeonslab.katatui.widgets
 
 import com.hyeonslab.katatui.cinterop.Blue
 import com.hyeonslab.katatui.cinterop.Indexed
+import com.hyeonslab.katatui.cinterop.Reset
 import com.hyeonslab.katatui.cinterop.Rgb
+import com.hyeonslab.katatui.cinterop.White
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -55,8 +57,18 @@ class StyleNativeTest {
   // --- fg / bg: named colors ---
 
   @Test
+  fun `named color Reset maps to cinterop Reset`() {
+    Style(fg = Color.Reset).toCValue().useContents { assertEquals(Reset, fg) }
+  }
+
+  @Test
   fun `named color Blue maps to cinterop Blue`() {
     Style(fg = Color.Blue).toCValue().useContents { assertEquals(Blue, fg) }
+  }
+
+  @Test
+  fun `named color White maps to cinterop White`() {
+    Style(fg = Color.White).toCValue().useContents { assertEquals(White, fg) }
   }
 
   // --- modifiers ---
@@ -64,7 +76,6 @@ class StyleNativeTest {
   @Test
   fun `bold is propagated`() {
     Style(bold = true).toCValue().useContents { assertTrue(bold) }
-    Style(bold = false).toCValue().useContents { assertFalse(bold) }
   }
 
   @Test
@@ -92,8 +103,8 @@ class StyleNativeTest {
   @Test
   fun `default Style produces Reset fg and bg with no modifiers`() {
     Style().toCValue().useContents {
-      assertEquals(com.hyeonslab.katatui.cinterop.Reset, fg)
-      assertEquals(com.hyeonslab.katatui.cinterop.Reset, bg)
+      assertEquals(Reset, fg)
+      assertEquals(Reset, bg)
       assertFalse(bold)
       assertFalse(italic)
       assertFalse(underlined)

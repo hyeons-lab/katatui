@@ -186,6 +186,25 @@ HEAD — chore: update devlog
 
 **Kotlin/Native rejects special chars in backtick names:** Backtick test names with `()` and `,` fail with "Name contains illegal characters". Fixed by using plain alphanumeric + space in all native test method names.
 
+## What Changed (session 7 — test suite fixes)
+
+2026-02-26T23:37-0800 codegen/src/test/.../WrapperEmitterTest.kt — added withTempDir helper (deletes temp dirs in finally); refactored emitBlock() to use withTempDir; replaced WrapperEmitterTest().run { … } with inline withTempDir { … } (bare run on outer this); added two new tests: `generated file carries OptIn annotation` (checks @file:OptIn) and `generated file imports used FFI functions`
+2026-02-26T23:37-0800 katatui/src/nativeTest/.../widgets/StyleNativeTest.kt — added Reset and White named-color tests (boundary coverage for 16-arm when); removed redundant false-case assertion from bold test (covered by default-style test)
+
+## Decisions (session 7)
+
+2026-02-26T23:37-0800 @file:OptIn not @OptIn — KotlinPoet FileSpec.addAnnotation emits @file:OptIn(…); test assertion updated to check "@file:OptIn" to match actual output
+2026-02-26T23:37-0800 withTempDir vs @TempDir — @TempDir requires junit-jupiter-api not in scope; withTempDir helper with try/finally is the correct lightweight fix
+
+## Issues (session 7)
+
+**@OptIn test failed on first run:** Plan claimed `@OptIn` would be in generated text; KotlinPoet renders file-level annotations as `@file:OptIn`, which does not contain the substring `@OptIn`. Fixed by checking `"@file:OptIn"` instead.
+
+## What Changed (session 8 — test assertion fixes)
+
+2026-02-27T00:45-0800 codegen/src/test/.../WrapperEmitterTest.kt — tightened OptIn assertion: `"ExperimentalForeignApi"` → `"ExperimentalForeignApi::class"` so it verifies the annotation and not just the import
+2026-02-27T00:45-0800 katatui/src/nativeTest/.../widgets/StyleNativeTest.kt — replaced FQCN `com.hyeonslab.katatui.cinterop.Reset` with short `Reset` in default-style test (Reset is in scope via import added in session 7)
+
 ## Next Steps
 
 - Commit and push all changes; update PR #1

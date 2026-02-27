@@ -3,6 +3,7 @@ package com.hyeonslab.katatui.codegen
 import com.hyeonslab.katatui.codegen.model.CFunction
 import com.hyeonslab.katatui.codegen.model.CParam
 import com.hyeonslab.katatui.codegen.model.WidgetGroup
+import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -21,16 +22,24 @@ class WrapperEmitterTest {
   private val styleSetter =
     CFunction("void", "katatui_block_set_style", listOf(self, CParam("style", "KatatuiStyle")))
 
-  private fun emitBlock(vararg extra: CFunction): String {
+  private fun withTempDir(block: (File) -> String): String {
+    val dir = Files.createTempDirectory("katatui-test").toFile()
+    return try {
+      block(dir)
+    } finally {
+      dir.deleteRecursively()
+    }
+  }
+
+  private fun emitBlock(vararg extra: CFunction): String = withTempDir { dir ->
     val group =
       WidgetGroup(
         "KatatuiBlock",
         "Block",
         listOf(ctorFn, dtorFn, titleSetter, bordersSetter, *extra),
       )
-    val tempDir = Files.createTempDirectory("katatui-test").toFile()
-    WrapperEmitter(tempDir).emit(listOf(group))
-    return tempDir.resolve("com/hyeonslab/katatui/Block.kt").readText()
+    WrapperEmitter(dir).emit(listOf(group))
+    dir.resolve("com/hyeonslab/katatui/Block.kt").readText()
   }
 
   @Test
@@ -68,13 +77,11 @@ class WrapperEmitterTest {
 
   @Test
   fun `complex type KatatuiStyle is excluded from generated setters`() {
-    val text =
-      WrapperEmitterTest().run {
-        val group = WidgetGroup("KatatuiBlock", "Block", listOf(ctorFn, dtorFn, styleSetter))
-        val tempDir = Files.createTempDirectory("katatui-test-complex").toFile()
-        WrapperEmitter(tempDir).emit(listOf(group))
-        tempDir.resolve("com/hyeonslab/katatui/Block.kt").readText()
-      }
+    val group = WidgetGroup("KatatuiBlock", "Block", listOf(ctorFn, dtorFn, styleSetter))
+    val text = withTempDir { dir ->
+      WrapperEmitter(dir).emit(listOf(group))
+      dir.resolve("com/hyeonslab/katatui/Block.kt").readText()
+    }
     assertFalse("var style" in text, "KatatuiStyle setter must be excluded from codegen")
   }
 
@@ -85,5 +92,20 @@ class WrapperEmitterTest {
     val text = emitBlock(adder)
     assertTrue("addData" in text)
     assertTrue("katatui_block_add_data" in text)
+  }
+
+  @Test
+  fun `generated file carries OptIn annotation`() {
+    val text = emitBlock()
+    assertTrue("@file:OptIn" in text)
+    assertTrue("ExperimentalForeignApi::class" in text)
+  }
+
+  @Test
+  fun `generated file imports used FFI functions`() {
+    val text = emitBlock()
+    assertTrue("import com.hyeonslab.katatui.cinterop.katatui_block_new" in text)
+    assertTrue("import com.hyeonslab.katatui.cinterop.katatui_block_free" in text)
+    assertTrue("import com.hyeonslab.katatui.cinterop.katatui_block_set_title" in text)
   }
 }
