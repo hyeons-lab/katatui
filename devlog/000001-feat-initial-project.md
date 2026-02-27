@@ -268,11 +268,31 @@ HEAD — chore: update devlog
 
 **cbindgen.toml settings silently ignored by build.rs:** The Builder API's with_crate() was supposed to auto-load cbindgen.toml via Config::from_root(), but the settings (including the pre-existing rename_variants = "ScreamingSnakeCase") were never applied. Root cause unclear; fixed definitively by calling Config::from_file() explicitly and passing via with_config().
 
+## What Changed (session 11 — review fixes)
+
+2026-02-27T15:41-0800 katatui-ffi/build.rs — removed `cargo:rerun-if-changed=cbindgen.toml`; adding any rerun-if-changed line switches Cargo from "re-run on any package file change" to "re-run only on listed files", which would have stopped header regeneration when Rust source files changed
+2026-02-27T15:41-0800 katatui/src/nativeMain/kotlin/.../StyleNative.kt — added @file:OptIn(ExperimentalForeignApi::class) at file level; removed per-function @OptIn from toCValue() and toColorEnum() for consistency with all other ext files
+2026-02-27T15:41-0800 katatui/src/nativeMain/kotlin/.../Marker.kt — new file; consolidated CanvasMarker and ChartMarker (identical enums mapping to the same KatatuiMarker C type) into a single Marker enum with internal fun Marker.toCMarker()
+2026-02-27T15:41-0800 katatui/src/nativeMain/kotlin/.../CanvasExt.kt — removed CanvasMarker enum and its toCMarker(); setMarker() parameter type changed to shared Marker; removed KatatuiMarker_* imports (moved to Marker.kt)
+2026-02-27T15:41-0800 katatui/src/nativeMain/kotlin/.../ChartExt.kt — removed ChartMarker enum and its toCMarker(); setDatasetMarker() parameter type changed to shared Marker; removed KatatuiMarker_* imports (moved to Marker.kt)
+2026-02-27T15:41-0800 katatui/src/nativeTest/kotlin/.../EnumMappingTest.kt — merged CanvasMarker+ChartMarker test sections (12 tests) into single Marker section (6 tests); 35 → 29 tests total
+
+## Decisions (session 11)
+
+2026-02-27T15:41-0800 Removed rerun-if-changed for cbindgen.toml — Cargo's default (re-run on any package file change) is correct here; adding a partial list would break header regeneration when Rust source changes; explicit Config::from_file() in build.rs is sufficient to ensure the toml is always loaded
+2026-02-27T15:41-0800 Consolidated Marker enum — CanvasMarker and ChartMarker both mapped identically to KatatuiMarker; a single Marker enum in Marker.kt removes the duplication and lets callers use canvas.setMarker(Marker.Dot) and chart.setDatasetMarker(Marker.Dot) interchangeably
+
+## Issues (session 11)
+
+**cargo:rerun-if-changed regression from session 10:** build.rs added `println!("cargo:rerun-if-changed=cbindgen.toml")` to document the config dependency. This implicitly restricted Cargo's re-run trigger to cbindgen.toml only, silently preventing header regeneration on Rust source edits. Fixed by removing the line entirely.
+
 ## Commits
 
 3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
-HEAD — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
+0f0440b — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
+HEAD — refactor: consolidate Marker enums and fix review issues
 
 ## Next Steps
 
 - Push and update PR #1
+- Refactor tests to use kotest

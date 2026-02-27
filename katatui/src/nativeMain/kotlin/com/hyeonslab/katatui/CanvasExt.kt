@@ -2,13 +2,6 @@
 
 package com.hyeonslab.katatui
 
-import com.hyeonslab.katatui.cinterop.KatatuiMarker
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Bar
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Block
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Braille
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Dot
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_HalfBlock
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Quadrant
 import com.hyeonslab.katatui.cinterop.katatui_canvas_begin_points
 import com.hyeonslab.katatui.cinterop.katatui_canvas_circle
 import com.hyeonslab.katatui.cinterop.katatui_canvas_commit_points
@@ -22,7 +15,7 @@ import com.hyeonslab.katatui.widgets.Style
 import com.hyeonslab.katatui.widgets.toCValue
 import kotlinx.cinterop.ExperimentalForeignApi
 
-fun Canvas.setMarker(marker: CanvasMarker) {
+fun Canvas.setMarker(marker: Marker) {
   katatui_canvas_set_marker(ptr, marker.toCMarker())
 }
 
@@ -58,22 +51,3 @@ fun Canvas.point(x: Double, y: Double) {
 fun Canvas.commitPoints() {
   katatui_canvas_commit_points(ptr)
 }
-
-enum class CanvasMarker {
-  Dot,
-  Block,
-  Bar,
-  Braille,
-  HalfBlock,
-  Quadrant,
-}
-
-internal fun CanvasMarker.toCMarker(): KatatuiMarker =
-  when (this) {
-    CanvasMarker.Dot -> KatatuiMarker_Dot
-    CanvasMarker.Block -> KatatuiMarker_Block
-    CanvasMarker.Bar -> KatatuiMarker_Bar
-    CanvasMarker.Braille -> KatatuiMarker_Braille
-    CanvasMarker.HalfBlock -> KatatuiMarker_HalfBlock
-    CanvasMarker.Quadrant -> KatatuiMarker_Quadrant
-  }

@@ -71,36 +71,36 @@ class EnumMappingTest {
     assertEquals(KatatuiConstraintKind_Fill, Constraint.Fill(0).toCKind())
   }
 
-  // --- CanvasMarker ---
+  // --- Marker ---
 
   @Test
-  fun `CanvasMarker Dot maps to KatatuiMarker_Dot`() {
-    assertEquals(KatatuiMarker_Dot, CanvasMarker.Dot.toCMarker())
+  fun `Marker Dot maps to KatatuiMarker_Dot`() {
+    assertEquals(KatatuiMarker_Dot, Marker.Dot.toCMarker())
   }
 
   @Test
-  fun `CanvasMarker Block maps to KatatuiMarker_Block`() {
-    assertEquals(KatatuiMarker_Block, CanvasMarker.Block.toCMarker())
+  fun `Marker Block maps to KatatuiMarker_Block`() {
+    assertEquals(KatatuiMarker_Block, Marker.Block.toCMarker())
   }
 
   @Test
-  fun `CanvasMarker Bar maps to KatatuiMarker_Bar`() {
-    assertEquals(KatatuiMarker_Bar, CanvasMarker.Bar.toCMarker())
+  fun `Marker Bar maps to KatatuiMarker_Bar`() {
+    assertEquals(KatatuiMarker_Bar, Marker.Bar.toCMarker())
   }
 
   @Test
-  fun `CanvasMarker Braille maps to KatatuiMarker_Braille`() {
-    assertEquals(KatatuiMarker_Braille, CanvasMarker.Braille.toCMarker())
+  fun `Marker Braille maps to KatatuiMarker_Braille`() {
+    assertEquals(KatatuiMarker_Braille, Marker.Braille.toCMarker())
   }
 
   @Test
-  fun `CanvasMarker HalfBlock maps to KatatuiMarker_HalfBlock`() {
-    assertEquals(KatatuiMarker_HalfBlock, CanvasMarker.HalfBlock.toCMarker())
+  fun `Marker HalfBlock maps to KatatuiMarker_HalfBlock`() {
+    assertEquals(KatatuiMarker_HalfBlock, Marker.HalfBlock.toCMarker())
   }
 
   @Test
-  fun `CanvasMarker Quadrant maps to KatatuiMarker_Quadrant`() {
-    assertEquals(KatatuiMarker_Quadrant, CanvasMarker.Quadrant.toCMarker())
+  fun `Marker Quadrant maps to KatatuiMarker_Quadrant`() {
+    assertEquals(KatatuiMarker_Quadrant, Marker.Quadrant.toCMarker())
   }
 
   // --- GraphType ---
@@ -118,38 +118,6 @@ class EnumMappingTest {
   @Test
   fun `GraphType Bar maps to KatatuiGraphType_Bar`() {
     assertEquals(KatatuiGraphType_Bar, GraphType.Bar.toCGraphType())
-  }
-
-  // --- ChartMarker ---
-
-  @Test
-  fun `ChartMarker Dot maps to KatatuiMarker_Dot`() {
-    assertEquals(KatatuiMarker_Dot, ChartMarker.Dot.toCMarker())
-  }
-
-  @Test
-  fun `ChartMarker Block maps to KatatuiMarker_Block`() {
-    assertEquals(KatatuiMarker_Block, ChartMarker.Block.toCMarker())
-  }
-
-  @Test
-  fun `ChartMarker Bar maps to KatatuiMarker_Bar`() {
-    assertEquals(KatatuiMarker_Bar, ChartMarker.Bar.toCMarker())
-  }
-
-  @Test
-  fun `ChartMarker Braille maps to KatatuiMarker_Braille`() {
-    assertEquals(KatatuiMarker_Braille, ChartMarker.Braille.toCMarker())
-  }
-
-  @Test
-  fun `ChartMarker HalfBlock maps to KatatuiMarker_HalfBlock`() {
-    assertEquals(KatatuiMarker_HalfBlock, ChartMarker.HalfBlock.toCMarker())
-  }
-
-  @Test
-  fun `ChartMarker Quadrant maps to KatatuiMarker_Quadrant`() {
-    assertEquals(KatatuiMarker_Quadrant, ChartMarker.Quadrant.toCMarker())
   }
 
   // --- LogoSize ---

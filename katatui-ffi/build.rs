@@ -1,6 +1,5 @@
 fn main() {
     let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    println!("cargo:rerun-if-changed=cbindgen.toml");
     let config = cbindgen::Config::from_file(
         std::path::Path::new(&crate_dir).join("cbindgen.toml"),
     )

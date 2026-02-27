@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 package com.hyeonslab.katatui.widgets
 
 import com.hyeonslab.katatui.cinterop.KatatuiColor_Black
@@ -24,7 +26,6 @@ import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.cValue
 
-@OptIn(ExperimentalForeignApi::class)
 internal fun Style.toCValue(): CValue<KatatuiStyle> = cValue {
   when (val c = this@toCValue.fg) {
     is Color.Rgb -> {
@@ -59,7 +60,6 @@ internal fun Style.toCValue(): CValue<KatatuiStyle> = cValue {
   crossed_out = this@toCValue.crossedOut
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun Color.toColorEnum() =
   when (this) {
     Color.Reset -> KatatuiColor_Reset

@@ -6,13 +6,6 @@ import com.hyeonslab.katatui.cinterop.KatatuiGraphType
 import com.hyeonslab.katatui.cinterop.KatatuiGraphType_Bar
 import com.hyeonslab.katatui.cinterop.KatatuiGraphType_Line
 import com.hyeonslab.katatui.cinterop.KatatuiGraphType_Scatter
-import com.hyeonslab.katatui.cinterop.KatatuiMarker
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Bar
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Block
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Braille
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Dot
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_HalfBlock
-import com.hyeonslab.katatui.cinterop.KatatuiMarker_Quadrant
 import com.hyeonslab.katatui.cinterop.katatui_chart_commit_dataset
 import com.hyeonslab.katatui.cinterop.katatui_chart_dataset_point
 import com.hyeonslab.katatui.cinterop.katatui_chart_set_dataset_graph_type
@@ -38,7 +31,7 @@ fun Chart.setDatasetGraphType(graphType: GraphType) {
 }
 
 /** Sets the marker of the current dataset. */
-fun Chart.setDatasetMarker(marker: ChartMarker) {
+fun Chart.setDatasetMarker(marker: Marker) {
   katatui_chart_set_dataset_marker(ptr, marker.toCMarker())
 }
 
@@ -80,28 +73,9 @@ enum class GraphType {
   Bar,
 }
 
-enum class ChartMarker {
-  Dot,
-  Block,
-  Bar,
-  Braille,
-  HalfBlock,
-  Quadrant,
-}
-
 internal fun GraphType.toCGraphType(): KatatuiGraphType =
   when (this) {
     GraphType.Scatter -> KatatuiGraphType_Scatter
     GraphType.Line -> KatatuiGraphType_Line
     GraphType.Bar -> KatatuiGraphType_Bar
-  }
-
-internal fun ChartMarker.toCMarker(): KatatuiMarker =
-  when (this) {
-    ChartMarker.Dot -> KatatuiMarker_Dot
-    ChartMarker.Block -> KatatuiMarker_Block
-    ChartMarker.Bar -> KatatuiMarker_Bar
-    ChartMarker.Braille -> KatatuiMarker_Braille
-    ChartMarker.HalfBlock -> KatatuiMarker_HalfBlock
-    ChartMarker.Quadrant -> KatatuiMarker_Quadrant
   }
