@@ -18,6 +18,7 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 - [x] Codegen module
 - [x] Sample app
 - [x] End-to-end build verified
+- [x] Pull Request created: [PR #1](https://github.com/hyeons-lab/katatui/pull/1)
 
 ## What Changed
 
@@ -124,7 +125,67 @@ HEAD — chore: update devlog
 
 **LoopWithTooManyJumpStatements in HeaderParser.kt:** Refactored loop had three jump statements. Fixed by replacing the Elvis continue (?:continue) with explicit null check + nested if block.
 
+## What Changed (session 4 — PR review fixes)
+
+2026-02-26T20:56-0800 katatui-ffi/src/types.rs — Added fg_r/g/b/fg_index/bg_r/g/b/bg_index payload fields to KatatuiStyle; added color_from_katatui() helper; From<KatatuiStyle> now uses payload for Rgb/Indexed colors (previously returned Reset for both)
+2026-02-26T20:56-0800 katatui-ffi/src/lib.rs — Removed katatui_terminal_init (was a no-op stub; ratatui::init() already enables raw mode + alt screen on Terminal::new)
+2026-02-26T20:56-0800 katatui-ffi/src/widgets/sparkline.rs — Fixed application order: style first (base), bar_style second (overrides); added comment noting ratatui-widgets 0.3 has no separate bar_style() method
+2026-02-26T20:56-0800 katatui/src/nativeInterop/cinterop/katatui.h — Added 8 uint8_t payload fields to KatatuiStyle struct; removed katatui_terminal_init declaration
+2026-02-26T20:56-0800 katatui/src/nativeMain/kotlin/…/StyleNative.kt — Rewrote toCValue() with payload-aware Rgb/Indexed handling; deleted public Color.toCValue(); renamed fallback to private toColorEnum()
+2026-02-26T20:56-0800 katatui/src/nativeMain/kotlin/…/Terminal.kt — Removed katatui_terminal_init call and import
+2026-02-26T20:56-0800 katatui/src/nativeMain/kotlin/…/BlockExt.kt — Replaced broken read/write style property (getter returned dummy Style()) with write-only setStyle() function
+2026-02-26T20:56-0800 katatui/src/nativeMain/kotlin/…/Event.kt — Added pollMillis(timeoutMillis: Long) overload for Swift callers that cannot construct Duration
+2026-02-26T20:56-0800 katatui/src/nativeMain/kotlin/…/Rect.kt — Added early-return guard in inner(): returns Rect(x, y, 0, 0) when width < 2 or height < 2 to prevent UShort coordinate wraparound
+2026-02-26T20:56-0800 codegen/src/main/kotlin/…/HeaderParser.kt — Removed two debug println() calls from widgetGroups()
+2026-02-26T20:56-0800 sample-app/src/…/main.kt — Changed block.style = Style(...) → block.setStyle(Style(...))
+2026-02-26T20:56-0800 sample-app/build.gradle.kts — Replaced byteArrayOf(...) embedding with Base64.decode(...) to reduce generated source size; added import java.util.Base64
+2026-02-26T20:56-0800 sample-app-swift/Sources/…/DSL.swift — Event.poll now calls EventKt.pollMillis; readKey simplified (SKIE bridges Char? → Character? directly, no cast needed)
+2026-02-26T20:56-0800 sample-app-swift/Package.swift — Replaced hardcoded aarch64 lib path with #if arch(arm64) conditional at package scope
+
+## Decisions (session 4)
+
+2026-02-26T20:56-0800 Style property → setStyle() — BlockExt previously exposed var Block.style with a dummy getter returning Style(); a write-only function is honest and simpler
+2026-02-26T20:56-0800 bar_style order fix without bar_style() — ratatui-widgets 0.3.0 has no Sparkline::bar_style() method; fixed by applying base style first and bar_style second (so bar_style wins when both are set); noted in code comment
+2026-02-26T20:56-0800 Base64 via java.util.Base64 import — fully-qualified java.util.Base64 in Gradle Kotlin DSL fails with "Unresolved reference 'util'"; explicit import java.util.Base64 resolves it
+
+## Issues (session 4)
+
+**Sparkline.bar_style() does not exist in ratatui 0.30:** Plan said to use Sparkline::bar_style(); ratatui-widgets 0.3.0 (used by ratatui 0.30) has no such method. Fixed by correcting application order to use .style() for both fields.
+**java.util.Base64 fails as fully-qualified in Gradle Kotlin DSL:** `java.util.Base64.getEncoder()` resolves as "Unresolved reference 'util'" in a Gradle Kotlin DSL script even though it works on JVM. Fixed by adding `import java.util.Base64` at the top of build.gradle.kts.
+
+## What Changed (session 5 — self-review fixes)
+
+2026-02-26T21:44-0800 katatui-ffi/src/types.rs — From<KatatuiColor> Rgb/Indexed arms changed to unreachable!(); eliminates the latent footgun where .into() on Rgb/Indexed silently returned Reset
+2026-02-26T21:44-0800 katatui-ffi/src/widgets/sparkline.rs — bar_style now properly implemented: when set, each data point is wrapped in SparklineBar::style(bar_style) so per-bar colouring works correctly; widget-level style() remains independent
+2026-02-26T21:44-0800 katatui/src/nativeMain/kotlin/…/StyleNative.kt — else branches now use already-bound c instead of re-accessing this@toCValue.fg/bg; toColorEnum() Rgb/Indexed arms changed to error() calls to make contract explicit and fail-fast
+
+## Decisions (session 5)
+
+2026-02-26T21:44-0800 SparklineBar for bar_style — ratatui-widgets 0.3 exposes SparklineBar::style() for per-bar styling; wrapping each u64 in SparklineBar::from(v).style(bar_style) achieves the correct semantics without any API surface change
+2026-02-26T21:44-0800 unreachable!() not panic!() in From<KatatuiColor> — communicates developer intent more clearly than a generic panic; the message names color_from_katatui as the correct alternative
+
+## What Changed (session 6 — tests)
+
+2026-02-26T22:06-0800 codegen/build.gradle.kts — added testImplementation(libs.kotlin.test)
+2026-02-26T22:06-0800 codegen/src/test/.../CFunctionTest.kt — new; tests FunctionRole classification (_new/free/set_/add_/render_/split/other) and setterProperty extraction
+2026-02-26T22:06-0800 codegen/src/test/.../HeaderParserTest.kt — new; integration tests for parse() (opaque types, body structs, enums, functions+params) and widgetGroups() (multi-word names, excluded prefixes, state function exclusion)
+2026-02-26T22:06-0800 codegen/src/test/.../WrapperEmitterTest.kt — new; verifies generated Kotlin source contains class declaration, close(), invoke factory, simple setters, adder methods; asserts complex types (KatatuiStyle) are excluded
+2026-02-26T22:06-0800 katatui/src/commonTest/.../widgets/StyleTest.kt — new; Style defaults, RESET constant, modifier storage, data class equality, copy
+2026-02-26T22:06-0800 katatui/src/commonTest/.../widgets/ColorTest.kt — new; Rgb/Indexed field storage and equality; named singleton type checks
+2026-02-26T22:06-0800 katatui/src/commonTest/.../widgets/BordersTest.kt — new; bitmask values, plus operator, idempotent combine, none identity
+2026-02-26T22:06-0800 katatui/src/commonTest/.../widgets/ConstraintTest.kt — new; all five factory methods, Int→UShort conversion, zero value
+2026-02-26T22:06-0800 katatui/src/nativeTest/.../RectTest.kt — new; inner() edge cases: zero/1/2/3 width-height, normal shrink; guards against UShort wraparound; origin preserved in guard path
+2026-02-26T22:06-0800 katatui/src/nativeTest/.../widgets/StyleNativeTest.kt — new; Style.toCValue() for Rgb fg/bg payload fields, Indexed fg/bg index field, named color mapping, all five modifiers, default Style
+
+## Decisions (session 6)
+
+2026-02-26T22:06-0800 nativeTest for Rect and StyleNative — Rect and StyleNative are in nativeMain (use cinterop types); tests that inspect CValue struct fields must be in nativeTest where cinterop is available
+2026-02-26T22:06-0800 Kotlin/Native backtick names: no special chars — Native backend rejects `()` and `,` in backtick-quoted test method names; renamed offending test in BordersTest
+
+## Issues (session 6)
+
+**Kotlin/Native rejects special chars in backtick names:** Backtick test names with `()` and `,` fail with "Name contains illegal characters". Fixed by using plain alphanumeric + space in all native test method names.
+
 ## Next Steps
 
-- Replace `HEAD` hash after commit; push branch, update PR
-- Swift wrapper using SKIE
+- Commit and push all changes; update PR #1

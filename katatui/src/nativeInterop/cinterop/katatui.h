@@ -85,6 +85,20 @@ typedef struct KatatuiStyle {
   bool underlined;
   bool dim;
   bool crossed_out;
+  /**
+   * RGB/Indexed payload — valid when fg == Rgb or Indexed respectively
+   */
+  uint8_t fg_r;
+  uint8_t fg_g;
+  uint8_t fg_b;
+  uint8_t fg_index;
+  /**
+   * RGB/Indexed payload — valid when bg == Rgb or Indexed respectively
+   */
+  uint8_t bg_r;
+  uint8_t bg_g;
+  uint8_t bg_b;
+  uint8_t bg_index;
 } KatatuiStyle;
 
 typedef struct KatatuiConstraint {
@@ -101,12 +115,6 @@ struct KatatuiTableState *katatui_table_state_new(void);
 void katatui_table_state_free(struct KatatuiTableState *state);
 
 void katatui_table_state_select(struct KatatuiTableState *state, int32_t index);
-
-/**
- * `ratatui::init()` already enables raw mode + alternate screen.
- * This function exists for symmetry with the Kotlin API.
- */
-bool katatui_terminal_init(struct KatatuiTerminal *terminal);
 
 void katatui_terminal_restore(struct KatatuiTerminal *_terminal);
 

@@ -18,6 +18,9 @@ fun poll(timeout: Duration = 100.milliseconds): Boolean {
   return katatui_event_poll(timeout.inWholeMilliseconds.toULong())
 }
 
+/** Convenience overload for Swift callers that can't construct a [Duration] directly. */
+fun pollMillis(timeoutMillis: Long = 100L): Boolean = poll(timeoutMillis.milliseconds)
+
 /**
  * Reads the next key event from the terminal.
  *

@@ -25,10 +25,12 @@ internal fun Rect.toCValue(): CValue<KatatuiRect> =
   }
 
 /** Returns the area one cell inside the border of this rect. */
-fun Rect.inner(): Rect =
-  Rect(
+fun Rect.inner(): Rect {
+  if (width < 2u || height < 2u) return Rect(x, y, 0u, 0u)
+  return Rect(
     (x + 1u).toUShort(),
     (y + 1u).toUShort(),
-    maxOf(0, width.toInt() - 2).toUShort(),
-    maxOf(0, height.toInt() - 2).toUShort(),
+    (width.toInt() - 2).toUShort(),
+    (height.toInt() - 2).toUShort(),
   )
+}

@@ -1,3 +1,4 @@
+import java.util.Base64
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -35,8 +36,10 @@ abstract class EmbedResources : DefaultTask() {
   }
 
   private fun embed(sb: StringBuilder, name: String, file: java.io.File) {
-    val values = file.readBytes().joinToString(", ") { it.toString() }
-    sb.appendLine("internal val $name: ByteArray = byteArrayOf($values)")
+    val b64 = Base64.getEncoder().encodeToString(file.readBytes())
+    sb.appendLine(
+      "internal val $name: ByteArray = kotlin.io.encoding.Base64.Default.decode(\"$b64\")"
+    )
   }
 }
 

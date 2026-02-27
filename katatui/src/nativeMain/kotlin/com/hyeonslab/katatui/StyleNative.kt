@@ -1,15 +1,40 @@
 package com.hyeonslab.katatui.widgets
 
-import com.hyeonslab.katatui.cinterop.KatatuiColor
+import com.hyeonslab.katatui.cinterop.Indexed
 import com.hyeonslab.katatui.cinterop.KatatuiStyle
+import com.hyeonslab.katatui.cinterop.Rgb
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.cValue
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun Style.toCValue(): CValue<KatatuiStyle> = cValue {
-  fg = this@toCValue.fg.toCValue()
-  bg = this@toCValue.bg.toCValue()
+  when (val c = this@toCValue.fg) {
+    is Color.Rgb -> {
+      fg = Rgb
+      fg_r = c.r
+      fg_g = c.g
+      fg_b = c.b
+    }
+    is Color.Indexed -> {
+      fg = Indexed
+      fg_index = c.index
+    }
+    else -> fg = c.toColorEnum()
+  }
+  when (val c = this@toCValue.bg) {
+    is Color.Rgb -> {
+      bg = Rgb
+      bg_r = c.r
+      bg_g = c.g
+      bg_b = c.b
+    }
+    is Color.Indexed -> {
+      bg = Indexed
+      bg_index = c.index
+    }
+    else -> bg = c.toColorEnum()
+  }
   bold = this@toCValue.bold
   italic = this@toCValue.italic
   underlined = this@toCValue.underlined
@@ -18,7 +43,7 @@ internal fun Style.toCValue(): CValue<KatatuiStyle> = cValue {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-internal fun Color.toCValue(): KatatuiColor =
+private fun Color.toColorEnum() =
   when (this) {
     Color.Reset -> com.hyeonslab.katatui.cinterop.Reset
     Color.Black -> com.hyeonslab.katatui.cinterop.Black
@@ -37,6 +62,6 @@ internal fun Color.toCValue(): KatatuiColor =
     Color.LightMagenta -> com.hyeonslab.katatui.cinterop.LightMagenta
     Color.LightCyan -> com.hyeonslab.katatui.cinterop.LightCyan
     Color.White -> com.hyeonslab.katatui.cinterop.White
-    is Color.Rgb -> com.hyeonslab.katatui.cinterop.Rgb
-    is Color.Indexed -> com.hyeonslab.katatui.cinterop.Indexed
+    is Color.Rgb -> error("Color.Rgb must be handled by caller before toColorEnum()")
+    is Color.Indexed -> error("Color.Indexed must be handled by caller before toColorEnum()")
   }

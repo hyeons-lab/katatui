@@ -21,8 +21,8 @@ import com.hyeonslab.katatui.nextRow
 import com.hyeonslab.katatui.paragraph
 import com.hyeonslab.katatui.poll
 import com.hyeonslab.katatui.readKey
+import com.hyeonslab.katatui.setStyle
 import com.hyeonslab.katatui.sparkline
-import com.hyeonslab.katatui.style
 import com.hyeonslab.katatui.table
 import com.hyeonslab.katatui.tabs
 import com.hyeonslab.katatui.terminal
@@ -94,7 +94,7 @@ fun main() {
       val memPct = WAVE[(tick + WAVE.size / 2) % WAVE.size].toUByte()
 
       draw {
-        block(size) { style = Style(bg = Color.Rgb(41u, 44u, 51u)) }
+        block(size) { setStyle(Style(bg = Color.Rgb(41u, 44u, 51u))) }
         val areas = Layout.vertical(Constraint.Length(3), Constraint.Fill(1)).split(size)
         val tabRow = areas[0]
         val content = areas[1]

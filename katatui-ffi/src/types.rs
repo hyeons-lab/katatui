@@ -41,6 +41,16 @@ pub struct KatatuiStyle {
     pub underlined: bool,
     pub dim: bool,
     pub crossed_out: bool,
+    /// RGB/Indexed payload — valid when fg == Rgb or Indexed respectively
+    pub fg_r: u8,
+    pub fg_g: u8,
+    pub fg_b: u8,
+    pub fg_index: u8,
+    /// RGB/Indexed payload — valid when bg == Rgb or Indexed respectively
+    pub bg_r: u8,
+    pub bg_g: u8,
+    pub bg_b: u8,
+    pub bg_index: u8,
 }
 
 #[repr(C)]
@@ -87,18 +97,33 @@ impl From<KatatuiColor> for ratatui::style::Color {
             KatatuiColor::LightMagenta => ratatui::style::Color::LightMagenta,
             KatatuiColor::LightCyan => ratatui::style::Color::LightCyan,
             KatatuiColor::White => ratatui::style::Color::White,
-            KatatuiColor::Rgb => ratatui::style::Color::Reset,
-            KatatuiColor::Indexed => ratatui::style::Color::Reset,
+            KatatuiColor::Rgb | KatatuiColor::Indexed => {
+                unreachable!("Rgb/Indexed carry payload — use color_from_katatui, not From<KatatuiColor>")
+            }
         }
+    }
+}
+
+fn color_from_katatui(
+    kind: KatatuiColor,
+    r: u8,
+    g: u8,
+    b: u8,
+    index: u8,
+) -> ratatui::style::Color {
+    match kind {
+        KatatuiColor::Rgb => ratatui::style::Color::Rgb(r, g, b),
+        KatatuiColor::Indexed => ratatui::style::Color::Indexed(index),
+        other => other.into(),
     }
 }
 
 impl From<KatatuiStyle> for ratatui::style::Style {
     fn from(s: KatatuiStyle) -> Self {
         use ratatui::style::Modifier;
-        let mut style = ratatui::style::Style::default()
-            .fg(s.fg.into())
-            .bg(s.bg.into());
+        let fg = color_from_katatui(s.fg, s.fg_r, s.fg_g, s.fg_b, s.fg_index);
+        let bg = color_from_katatui(s.bg, s.bg_r, s.bg_g, s.bg_b, s.bg_index);
+        let mut style = ratatui::style::Style::default().fg(fg).bg(bg);
         if s.bold {
             style = style.add_modifier(Modifier::BOLD);
         }

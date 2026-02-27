@@ -165,8 +165,6 @@ class HeaderParser {
         }
         .filter { it.key !in excluded }
 
-    println("Prefixes to C names: ${prefixToCName.keys}")
-
     val grouped = mutableMapOf<String, MutableList<CFunction>>()
     for (fn in functions.filter { it.name.startsWith("katatui_") }) {
       val body = fn.name.removePrefix("katatui_")
@@ -177,7 +175,6 @@ class HeaderParser {
 
       if (prefix != null) {
         val rest = body.removePrefix(prefix).removePrefix("_")
-        println("Fn: ${fn.name}, body: $body, prefix: $prefix, rest: $rest")
         if (!rest.startsWith("state")) {
           grouped.getOrPut(prefix) { mutableListOf() }.add(fn)
         }

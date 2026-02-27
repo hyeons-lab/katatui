@@ -59,13 +59,6 @@ pub extern "C" fn katatui_table_state_select(
     widgets::table::katatui_table_state_select(state, index);
 }
 
-/// `ratatui::init()` already enables raw mode + alternate screen.
-/// This function exists for symmetry with the Kotlin API.
-#[no_mangle]
-pub extern "C" fn katatui_terminal_init(terminal: *mut KatatuiTerminal) -> bool {
-    !terminal.is_null()
-}
-
 #[no_mangle]
 pub extern "C" fn katatui_terminal_restore(_terminal: *mut KatatuiTerminal) {
     ratatui::restore();
