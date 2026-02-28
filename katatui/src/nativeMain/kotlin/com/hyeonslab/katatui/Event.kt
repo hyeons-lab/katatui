@@ -47,6 +47,12 @@ const val KEY_LEFT: Char = '\u00F3'
 /** Key code for the Right arrow key. */
 const val KEY_RIGHT: Char = '\u00F4'
 
+/** Key code for the Backspace key. */
+const val KEY_BACKSPACE: Char = '\b'
+
+/** Key code for the Tab key. */
+const val KEY_TAB: Char = '\t'
+
 /** Key code for the Enter key. */
 const val KEY_ENTER: Char = '\r'
 

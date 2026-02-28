@@ -510,6 +510,8 @@ pub extern "C" fn katatui_event_read_key_code() -> u8 {
             use crossterm::event::KeyCode;
             match key_event.code {
                 KeyCode::Char(c) if (c as u32) < 128 => c as u8,
+                KeyCode::Backspace => 0x08,
+                KeyCode::Tab => 0x09,
                 KeyCode::Enter => b'\r',
                 KeyCode::Esc => 0x1B,
                 KeyCode::Up => 0xF1,

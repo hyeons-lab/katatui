@@ -93,7 +93,10 @@ kotlin {
   sourceSets {
     nativeMain {
       kotlin.srcDir(generateResources.map { resourcesDir.get().asFile })
-      dependencies { implementation(project(":katatui")) }
+      dependencies {
+        implementation(project(":katatui"))
+        implementation(libs.kotlinx.coroutines.core)
+      }
     }
   }
 

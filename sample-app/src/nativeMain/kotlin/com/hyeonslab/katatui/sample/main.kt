@@ -4,14 +4,11 @@ import com.hyeonslab.katatui.Constraint
 import com.hyeonslab.katatui.Frame
 import com.hyeonslab.katatui.GraphType
 import com.hyeonslab.katatui.ImageState
-import com.hyeonslab.katatui.KEY_DOWN
-import com.hyeonslab.katatui.KEY_LEFT
-import com.hyeonslab.katatui.KEY_RIGHT
-import com.hyeonslab.katatui.KEY_UP
 import com.hyeonslab.katatui.Layout
 import com.hyeonslab.katatui.LogoSize
 import com.hyeonslab.katatui.Marker
 import com.hyeonslab.katatui.MascotEyeColor
+import com.hyeonslab.katatui.Picker
 import com.hyeonslab.katatui.Rect
 import com.hyeonslab.katatui.ScrollbarOrientation
 import com.hyeonslab.katatui.ScrollbarState
@@ -60,64 +57,12 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.cinterop.ExperimentalForeignApi
-
-private val TAB_NAMES =
-  listOf("Dashboard", "Chart", "Canvas", "Scrollbar", "Branding", "Widgets", "Image")
-
-// Sine-shaped wave cycling through 20 values (0–100 range)
-private val WAVE =
-  ulongArrayOf(
-    50uL,
-    65uL,
-    78uL,
-    88uL,
-    95uL,
-    98uL,
-    95uL,
-    88uL,
-    78uL,
-    65uL,
-    50uL,
-    35uL,
-    22uL,
-    12uL,
-    5uL,
-    2uL,
-    5uL,
-    12uL,
-    22uL,
-    35uL,
-  )
-
-private val SCROLL_LINES =
-  listOf(
-    "Scrollbar widget — vertical right orientation",
-    "ScrollbarState tracks three values:",
-    "  contentLength         = total number of content lines",
-    "  viewportContentLength = number of visible lines",
-    "  position              = index of the topmost visible line",
-    "",
-    "The thumb size and position are computed automatically.",
-    "Set all three fields before each call to scrollbar().",
-    "",
-    "This demo auto-scrolls to show the thumb moving.",
-    "",
-    "Line 11: Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    "Line 12: Sed do eiusmod tempor incididunt ut labore et dolore magna.",
-    "Line 13: Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
-    "Line 14: Duis aute irure dolor in reprehenderit in voluptate velit.",
-    "Line 15: Excepteur sint occaecat cupidatat non proident, sunt in.",
-    "Line 16: Culpa qui officia deserunt mollit anim id est laborum.",
-    "Line 17: Nam libero tempore, cum soluta nobis eligendi optio cumque.",
-    "Line 18: Quis autem vel eum iure reprehenderit qui in ea voluptate.",
-    "Line 19: Temporibus autem quibusdam et aut officiis debitis rerum.",
-    "Line 20: Itaque earum rerum hic tenetur a sapiente delectus ut aut.",
-    "Line 21: At vero eos et accusamus et iusto odio dignissimos ducimus.",
-    "Line 22: Nam eos qui ratione voluptatem sequi nesciunt, neque porro.",
-    "Line 23: Quis dolorem ipsum, quia dolor sit, amet consectetur.",
-    "Line 24: Nemo enim ipsam voluptatem quia voluptas sit aspernatur.",
-    "Line 25: Neque porro quisquam est qui dolorem ipsum quia amet.",
-  )
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 
 private val WIDGET_ROWS =
   listOf(
@@ -138,28 +83,34 @@ private val WIDGET_ROWS =
     listOf("Mascot", "Branding", "Session 9", "Katatui mascot with eye colour variants"),
   )
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, ExperimentalCoroutinesApi::class)
 fun main() {
   terminal {
-    // LEAP_DARK_PNG is embedded at build time from sample-app/leap-dark.png.
-    // To use a different image, add it to generateResources in sample-app/build.gradle.kts.
-    val imageState = ImageState.fromBytes(LEAP_DARK_PNG)
     val scrollbarState = ScrollbarState()
+    val appStore = AppStore()
+    val env = readEnv()
+    val scope = CoroutineScope(Dispatchers.Default)
+    // Picker is created on the main thread so Picker::from_query_stdio() can query the
+    // terminal for the best image protocol (Kitty, Sixel, halfblocks, etc.).
+    // The actual image decode is offloaded to a background thread via the coroutine.
+    val picker = Picker()
+    var imageFuture: Deferred<ImageState?>? = null
+    var imageState: ImageState? = null
+    var previousTab = -1
 
-    var activeTab = 0
-    var tick = 0
-    var scrollOffset = 0
-    val history = ArrayDeque<ULong>(40)
+    while (appStore.state.running) {
+      appStore.dispatch(AppIntent.Tick)
+      val state = appStore.state
 
-    while (true) {
-      // Advance simulation state
-      tick++
-      history.addLast(WAVE[tick % WAVE.size])
-      if (history.size > 40) history.removeFirst()
-
-      val cpuPct = (tick * 3 % 101).toUByte()
-      // Mem is offset by a half-period so the two gauges move in opposite directions
-      val memPct = WAVE[(tick + WAVE.size / 2) % WAVE.size].toUByte()
+      // Free image resources when leaving the Image tab so memory is not held indefinitely.
+      // They are recreated on the next visit.
+      if (previousTab == 6 && state.activeTab != 6) {
+        imageFuture?.cancel()
+        imageFuture = null
+        imageState?.close()
+        imageState = null
+      }
+      previousTab = state.activeTab
 
       draw {
         block(size) { setStyle(Style(bg = Color.Rgb(41u, 44u, 51u))) }
@@ -170,44 +121,38 @@ fun main() {
         // Tab bar
         tabs(tabRow) {
           TAB_NAMES.forEach { addTitle(it) }
-          selected = activeTab.toUInt()
+          selected = state.activeTab.toUInt()
         }
 
         // Clear the content area on every frame to prevent cross-tab artifacts
         clear(content)
 
-        when (activeTab) {
-          0 -> renderDashboard(content, history, cpuPct, memPct)
-          1 -> renderChart(content, tick)
-          2 -> renderCanvas(content, tick)
-          3 -> renderScrollbar(content, scrollbarState, scrollOffset)
-          4 -> renderBranding(content, tick)
+        when (state.activeTab) {
+          0 -> renderDashboard(content, state.history, state.cpuPct, state.memPct)
+          1 -> renderChart(content, state.tick)
+          2 -> renderCanvas(content, state.tick)
+          3 -> renderScrollbar(content, scrollbarState, state.scrollOffset)
+          4 -> renderBranding(content, state.tick)
           5 -> renderWidgetTable(content)
-          6 -> renderImageTab(content, imageState)
+          6 -> {
+            val future =
+              imageFuture
+                ?: scope
+                  .async { ImageState.fromBytesWithPicker(LEAP_DARK_PNG, picker) }
+                  .also { imageFuture = it }
+            if (imageState == null && future.isCompleted) imageState = future.getCompleted()
+            renderImageTab(content, imageState, loading = !future.isCompleted)
+          }
+          7 -> renderKatatuiCodeTab(content, state.codeState, env)
         }
       }
 
-      if (poll()) {
-        when (readKey()) {
-          'q' -> break
-          '1' -> activeTab = 0
-          '2' -> activeTab = 1
-          '3' -> activeTab = 2
-          '4' -> activeTab = 3
-          '5' -> activeTab = 4
-          '6' -> activeTab = 5
-          '7' -> activeTab = 6
-          KEY_LEFT -> if (activeTab > 0) activeTab--
-          KEY_RIGHT -> if (activeTab < TAB_NAMES.lastIndex) activeTab++
-          KEY_UP -> if (activeTab == 3 && scrollOffset > 0) scrollOffset--
-          KEY_DOWN ->
-            if (activeTab == 3)
-              scrollOffset = (scrollOffset + 1).coerceAtMost(SCROLL_LINES.size - 1)
-        }
-      }
+      if (poll()) appStore.dispatch(AppIntent.KeyPress(readKey()))
     }
 
+    scope.cancel()
     imageState?.close()
+    picker.close()
     scrollbarState.close()
   }
 }
@@ -278,7 +223,7 @@ private fun Frame.renderDashboard(
 
   // Help text
   paragraph {
-    text = "◄ ►  or  1–7 : switch tabs     ↑/↓ : scroll (Scrollbar tab)     q : quit"
+    text = "◄ ►  or  1–8 : switch tabs     ↑/↓ : scroll (Scrollbar tab)     q : quit"
     this.area = helpArea
   }
 }
@@ -401,18 +346,23 @@ private fun Frame.renderWidgetTable(area: Rect) {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun Frame.renderImageTab(area: Rect, imageState: ImageState?) {
+private fun Frame.renderImageTab(area: Rect, imageState: ImageState?, loading: Boolean = false) {
   block(area) {
     title = "Image"
     borders = Borders.all.bits
   }
-  if (imageState != null) {
-    image(imageState, area.inner())
-  } else {
-    paragraph {
-      text =
-        "Image could not be decoded.\n\nAdd the file to sample-app/ and register it\nin generateResources inside build.gradle.kts."
-      this.area = area.inner()
-    }
+  when {
+    imageState != null -> image(imageState, area.inner())
+    loading ->
+      paragraph {
+        text = "Loading image…"
+        this.area = area.inner()
+      }
+    else ->
+      paragraph {
+        text =
+          "Image could not be decoded.\n\nAdd the file to sample-app/ and register it\nin generateResources inside build.gradle.kts."
+        this.area = area.inner()
+      }
   }
 }

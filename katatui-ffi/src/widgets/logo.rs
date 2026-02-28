@@ -9,11 +9,19 @@ pub struct KatatuiLogo {
     pub size: KatatuiLogoSize,
 }
 
-pub fn build_logo(l: &KatatuiLogo) -> ratatui::widgets::RatatuiLogo {
-    match l.size {
-        KatatuiLogoSize::Tiny => ratatui::widgets::RatatuiLogo::tiny(),
-        KatatuiLogoSize::Small => ratatui::widgets::RatatuiLogo::small(),
-    }
+// "katatui" rendered in the same block-character style as the ratatui logo.
+// Only the first letter differs: r → k (▌▞/▌▚ for tiny, █▌▞▝/█▌▚▗ for small).
+const KATATUI_LOGO_TINY: &str =
+    "▌▞▗▀▖▜▘▞▚▝▛▐ ▌▌\n▌▚▐▀▌▐ ▛▜ ▌▝▄▘▌\n";
+
+const KATATUI_LOGO_SMALL: &str =
+    "█▌▞▝ ▄▀▀▄▝▜▛▘▄▀▀▄▝▜▛▘█  █ █\n█▌▚▗ █▀▀█ ▐▌ █▀▀█ ▐▌ ▀▄▄▀ █\n";
+
+pub fn build_logo(l: &KatatuiLogo) -> ratatui::text::Text<'static> {
+    ratatui::text::Text::raw(match l.size {
+        KatatuiLogoSize::Tiny => KATATUI_LOGO_TINY,
+        KatatuiLogoSize::Small => KATATUI_LOGO_SMALL,
+    })
 }
 
 #[no_mangle]

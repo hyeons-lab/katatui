@@ -104,6 +104,13 @@ typedef struct KatatuiMascot KatatuiMascot;
 typedef struct KatatuiParagraph KatatuiParagraph;
 
 /**
+ * Opaque handle to a ratatui_image Picker.
+ * Must be created on the main thread (where terminal I/O is available) so that
+ * `Picker::from_query_stdio()` can detect the best image protocol.
+ */
+typedef struct KatatuiPicker KatatuiPicker;
+
+/**
  * Symbols are stored as owned `String`; drop is automatic when the struct is freed.
  */
 typedef struct KatatuiScrollbar KatatuiScrollbar;
@@ -411,6 +418,25 @@ void katatui_gauge_set_label(struct KatatuiGauge *gauge, const char *label);
 void katatui_gauge_set_style(struct KatatuiGauge *gauge, struct KatatuiStyle style);
 
 void katatui_gauge_set_gauge_style(struct KatatuiGauge *gauge, struct KatatuiStyle style);
+
+/**
+ * Creates a Picker by querying the terminal for the best image protocol.
+ * Falls back to half-block rendering if the query fails.
+ * Must be called from the main thread.
+ */
+struct KatatuiPicker *katatui_picker_new(void);
+
+void katatui_picker_free(struct KatatuiPicker *picker);
+
+/**
+ * Creates image state from in-memory bytes using a pre-created Picker.
+ * Safe to call from any thread as long as no other thread is concurrently
+ * accessing the same Picker.
+ * Returns null if the bytes cannot be decoded.
+ */
+struct KatatuiImageState *katatui_image_state_from_bytes_with_picker(const uint8_t *data,
+                                                                     uintptr_t len,
+                                                                     const struct KatatuiPicker *picker);
 
 /**
  * Creates image state from a file path.

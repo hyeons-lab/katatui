@@ -361,11 +361,112 @@ HEAD — fix: always link katatui Rust FFI release lib regardless of Kotlin bina
 **Scrollbar type inference with as_str():** Calling widget.thumb_symbol(sym.as_str()) caused E0282 ("cannot infer type"); root cause is lifetime narrowing from Scrollbar<'static> to Scrollbar<'shorter>. Fixed with as_deref() on Option<String> and explicit Scrollbar<'_> annotation.
 **Private symbol fields in scrollbar.rs:** lib.rs (same crate) needs access to symbol fields for cloning; fixed by changing private to pub(crate).
 
+## What Changed (session 15 — Katatui Code TUI tab)
+
+2026-02-27T19:17-0800 devlog/plans/000001-04-cc-tab.md — plan for Katatui Code 8th tab
+2026-02-27T19:17-0800 katatui-ffi/src/lib.rs — added `KeyCode::Backspace => 0x08` and `KeyCode::Tab => 0x09` to katatui_event_read_key_code match
+2026-02-27T19:17-0800 katatui/src/nativeMain/kotlin/.../Event.kt — added KEY_BACKSPACE = '\b' and KEY_TAB = '\t' constants
+2026-02-27T19:17-0800 sample-app/src/.../sample/KatatuiCode.kt — new; ChatMessage/Sender domain model; KatatuiCodeState (messages, input, cursorPos, scrollOffset, selectedSuggestion, computed suggestions/isCommandMode); KatatuiCodeIntent sealed interface (9 intents); pure reduce() function; KatatuiCodeStore wrapping state+dispatch; KatatuiCodeEnv data class; readEnv() reading HOME/PWD; readGitBranch() via fopen
+2026-02-27T19:17-0800 sample-app/src/.../sample/renderKatatuiCode.kt — new; Frame.renderKatatuiCodeTab() with 4-region layout; renderMessages() with logo/text split + scrollbar; renderSuggestions()/renderInput()/renderStatusBar() helpers; flattenMessages/formattedSuggestions/inputWithCursor private helpers; LOGO_HEIGHT = 6 constant
+2026-02-27T19:17-0800 sample-app/src/.../sample/main.kt — added "Katatui Code" to TAB_NAMES; KatatuiCodeStore + readEnv() init; '8' key binding; updated KEY_LEFT/RIGHT to dispatch CursorLeft/Right on tab 7; added KEY_UP/DOWN ScrollUp/Down dispatch; KEY_BACKSPACE/TAB/ENTER/ESC dispatch; else branch for TypeChar on printable chars; added tab 7 render case
+
+## Decisions (session 15)
+
+2026-02-27T19:17-0800 Private helper functions for renderKatatuiCodeTab — split into renderMessages/renderSuggestions/renderInput/renderStatusBar to keep each function focused; detekt prefers smaller functions
+2026-02-27T19:17-0800 Unicode escapes for special chars in string literals — using \u276F (❯), \u25C6 (◆), \u2502 (│), \u2191 (↑), \u2193 (↓), \u2190 (←), \u2192 (→) avoids source encoding issues
+2026-02-27T19:17-0800 ScrollbarState().use per-frame for CC tab — CC tab owns its scrollbar state; create+close per frame avoids adding it to the main lifecycle; .use handles AutoCloseable cleanup
+2026-02-27T19:17-0800 when (val key = readKey()) — binding the key to a val in the when expression allows the else branch to reference the value for the TypeChar dispatch; key is Char? but null cannot fall in the ' '..'~' range so key!! is not needed (null check in else branch)
+
 ## Commits
 
 4342e07 — feat: expand sample app to showcase all 15 widgets across 7 tabs
 27675bf — fix: always link katatui Rust FFI release lib regardless of Kotlin binary type
-HEAD — fix: address all PR review issues
+3c6b74c — fix: address all PR review issues
+HEAD — feat: add Katatui Code TUI tab (8th tab, MVI architecture)
+
+## What Changed (session 16 — vertical suggestion menu)
+
+2026-02-27T19:52-0800 sample-app/src/.../sample/KatatuiCode.kt — added `PrevSuggestion` intent to sealed interface; added reducer arm: wraps index backward with `(selectedSuggestion - 1 + size) % size`
+2026-02-27T19:52-0800 sample-app/src/.../sample/renderKatatuiCode.kt — reordered layout: messages(Fill(1)), input(Length(3)), suggestions(Length(suggHeight)), status(Length(1)); `suggHeight` = `suggestions.size` when `isCommandMode && suggestions.isNotEmpty()`, else 1; `formattedSuggestions` now renders vertical list with `▶` (U+25B6) on selected item and `joinToString("\n")`; hint text updated to `/ commands` (drop TAB mention)
+2026-02-27T19:52-0800 sample-app/src/.../sample/main.kt — KEY_UP dispatch: added `isCommandMode` branch → `PrevSuggestion` before the ScrollUp fallback; KEY_DOWN dispatch: added `isCommandMode` branch → `NextSuggestion` before the ScrollDown fallback; removed KEY_TAB branch entirely; removed unused `KEY_TAB` import
+
+## Decisions (session 16)
+
+2026-02-27T19:52-0800 Suggestions below input — vertical list is more scannable than inline horizontal chips; placing it below the input box mirrors conventional autocomplete UI patterns (IDEs, shell completions)
+2026-02-27T19:52-0800 Dynamic layout height for suggestions — `Length(suggestions.size)` collapses to `Length(1)` when no suggestions, preserving layout stability (no layout re-flow visible to user when suggestions disappear)
+2026-02-27T19:52-0800 ↑/↓ gated on isCommandMode — outside command mode ↑/↓ continue to scroll message history; inside command mode they navigate suggestions; consistent with how most TUI apps disambiguate context-sensitive keys
+
+## Commits
+
+HEAD — feat: vertical suggestion menu for Katatui Code tab (↑/↓ navigation)
+
+## What Changed (session 17 — katatui logo)
+
+2026-02-27T20:21-0800 katatui-ffi/src/widgets/logo.rs — replaced `build_logo` return type from `RatatuiLogo` to `Text<'static>`; added `KATATUI_LOGO_TINY` and `KATATUI_LOGO_SMALL` constants spelling "katatui" with block characters in the same style as the ratatui logo; only the first letter differs (`r` → `k`): tiny uses `▌▞`/`▌▚` (left bar + diagonal slash/backslash), small uses `█▌▞▝`/`█▌▚▗` (heavy bar + left half + diagonal + quarter tip)
+
+## Decisions (session 17)
+
+2026-02-27T20:21-0800 Return `Text<'static>` from `build_logo` — `RatatuiLogo` is just `Text::raw(static_str)` internally; returning `Text<'static>` directly is simpler and removes the dependency on ratatui's logo widget; `Text` implements `Widget` so the lib.rs render call is unchanged
+2026-02-27T20:21-0800 Only replace the `r` glyph — all other letters in "ratatui" are identical to "katatui"; reusing the existing block-character designs for a, t, u, i preserves the visual style; k is designed as `▌▞`/`▌▚` (tiny: left-half + forward/backslash diagonal) and `█▌▞▝`/`█▌▚▗` (small: full + left-half + diagonal + quarter tip)
+
+## Commits
+
+HEAD — feat: replace ratatui logo with katatui block-character logo
+
+## What Changed (session 18 — MVI refactor: AppStore)
+
+2026-02-27T21:12-0800 sample-app/src/.../sample/App.kt — new; TAB_NAMES/WAVE/SCROLL_LINES constants (moved from main.kt); AppState data class (running, activeTab, tick, history, scrollOffset, codeState; cpuPct/memPct computed properties); AppIntent sealed interface (Quit, Tick, SelectTab, TabLeft, TabRight, ScrollUp, ScrollDown, Code, KeyPress); reduce() top-level function; private reduceKey() helper centralising all key→intent translation; AppStore class (state + dispatch)
+2026-02-27T21:12-0800 sample-app/src/.../sample/KatatuiCode.kt — removed KatatuiCodeStore class; state ownership moved to AppState.codeState
+2026-02-27T21:12-0800 sample-app/src/.../sample/main.kt — removed TAB_NAMES/WAVE/SCROLL_LINES constants and local vars (activeTab, tick, scrollOffset, history, store); removed KEY_* imports (moved to App.kt); replaced while(true)+break with while(appStore.state.running); main loop now: Tick dispatch → snapshot state → draw → KeyPress dispatch; zero conditional logic in event loop
+
+## Decisions (session 18)
+
+2026-02-27T21:12-0800 KeyPress captures raw Char? and reduceKey does all routing — removes all conditional dispatch logic from main.kt; key-to-intent translation is in one testable place; main loop is three lines: tick, draw, forward key
+2026-02-27T21:12-0800 AppStore composes KatatuiCodeState — codeState becomes a field of AppState; Code(intent) arm delegates to the existing KatatuiCodeState reducer; KatatuiCodeStore removed as redundant wrapper
+
+## Commits
+
+HEAD — refactor: full MVI architecture for sample-app (AppStore, AppState, AppIntent)
+
+## What Changed (session 19 — Picker FFI + image tab lifecycle)
+
+2026-02-28T00:00-0800 katatui-ffi/src/widgets/image.rs — added `KatatuiPicker` opaque struct (pub(crate) inner field keeps cbindgen opaque); `katatui_picker_new()` calls `Picker::from_query_stdio()` on whichever thread calls it (must be main); `katatui_picker_free()`; `katatui_image_state_from_bytes_with_picker(data, len, picker)` — image decode path using existing picker
+2026-02-28T00:00-0800 katatui/src/nativeInterop/cinterop/katatui.h — rebuilt via `:katatui:buildKatatuiFfiHeader`; added `KatatuiPicker` opaque typedef and three new function declarations
+2026-02-28T00:00-0800 katatui/build/generated-sources/katatui/.../Picker.kt — codegen auto-detected `KatatuiPicker` struct and generated `Picker` class (extends KatatuiWidget, ptr, close(), companion invoke)
+2026-02-28T00:00-0800 katatui/src/nativeMain/.../ImageState.kt — added `fromBytesWithPicker(bytes, picker)` factory calling `katatui_image_state_from_bytes_with_picker`
+2026-02-28T00:00-0800 gradle/libs.versions.toml — re-added `coroutines = "1.10.1"` and `kotlinx-coroutines-core` library entry (removed in earlier synchronous attempt, restored with coroutines approach)
+2026-02-28T00:00-0800 sample-app/build.gradle.kts — re-added `implementation(libs.kotlinx.coroutines.core)` to nativeMain dependencies
+2026-02-28T00:00-0800 sample-app/src/.../main.kt — `val picker = Picker()` created on main thread before loop; `scope.async { ImageState.fromBytesWithPicker(LEAP_DARK_PNG, picker) }` offloads decode to background; added `var previousTab = -1`; added image lifecycle cleanup: when `previousTab == 6 && state.activeTab != 6`, cancel imageFuture + close imageState + null both; `renderImageTab` has `loading` param restored; `picker.close()` in cleanup; `@OptIn(ExperimentalCoroutinesApi::class)` for `Deferred.getCompleted()`
+
+## Decisions (session 19)
+
+2026-02-28T00:00-0800 Split picker creation from image decode — `Picker::from_query_stdio()` queries the terminal (stdin/stdout) to detect the best image protocol; if run on a background thread it races with `readKey()` on the main thread, corrupting key events AND causing halfblocks fallback (pixelated image). Solution: `katatui_picker_new` runs on the main thread; `katatui_image_state_from_bytes_with_picker` runs on the background thread. Passing `picker` (just a raw pointer) across threads is safe here because main thread does not use picker after construction.
+2026-02-28T00:00-0800 pub(crate) inner field in KatatuiPicker — makes cbindgen emit opaque `typedef struct KatatuiPicker KatatuiPicker;` without exposing the Picker type in the C header; cinterop then exposes it as `cnames.structs.KatatuiPicker`
+2026-02-28T00:00-0800 Delete hand-written Picker.kt — codegen auto-detected `KatatuiPicker` and generated an equivalent class; keeping both caused `Redeclaration: class Picker` compile error; the generated version has all needed members
+2026-02-28T00:00-0800 Free ImageState on tab leave — ImageState holds GPU/terminal memory for the image protocol; freeing on leave and recreating on next visit avoids holding that memory indefinitely while the user navigates other tabs
+
+## Issues (session 19)
+
+**Hand-written Picker.kt conflicted with codegen:** Created `katatui/src/.../Picker.kt` manually before realising codegen would auto-generate it from the new `KatatuiPicker` struct in the header. Both declared `class Picker : KatatuiWidget` → compile error `Redeclaration`. Fixed by deleting the hand-written file.
+**ExperimentalCoroutinesApi opt-in missing:** `Deferred.getCompleted()` requires `@OptIn(ExperimentalCoroutinesApi::class)`. Added to `main()`.
+
+## What Changed (session 20 — KatatuiCode scroll + logo in paragraph)
+
+2026-02-28T00:00-0800 sample-app/src/.../sample/KatatuiCode.kt — redefined `scrollOffset` semantics: 0 = pinned to latest (bottom), N = scrolled up N rows from bottom; `ScrollUp` → `scrollOffset + 1`, `ScrollDown` → `maxOf(0, scrollOffset - 1)`, `Accept` → `scrollOffset = 0`
+2026-02-28T00:00-0800 sample-app/src/.../sample/renderKatatuiCode.kt — replaced `logo()` widget + separate paragraph approach with unified `LOGO_LINES` constant (literal block-character strings from KATATUI_LOGO_SMALL); `renderMessages` now: `val allLines = LOGO_LINES + textLines`; single scroll loop + single `paragraph` covers both logo and messages; `clampedOffset` recalculated as `maxOf(0, maxOffset - state.scrollOffset)` to convert bottom-distance to top-anchored offset; removed `logo`, `setSize`, `LogoSize` imports (no longer needed)
+
+## Decisions (session 20)
+
+2026-02-28T00:00-0800 scrollOffset as distance from bottom — eliminates Int.MAX_VALUE sentinel; 0 naturally means "show latest" (correct chat default); ScrollUp/ScrollDown are simple +1/-1; viewport-clamping is done at render time, not in the reducer
+2026-02-28T00:00-0800 Hardcode LOGO_LINES instead of logo() widget — the `logo()` widget always renders from its own row 0; when partially visible it clips from the bottom (shrinks), not from the top (slides off). To make the logo truly scroll as content, it must be text lines prepended to the paragraph's line list
+
+## What Changed (session 21 — logo text fix)
+
+2026-02-28T00:00-0800 sample-app/src/.../sample/renderKatatuiCode.kt — fixed unicode escape errors in LOGO_LINES (▘ and ▌ were both incorrectly `\u2588` (█)); replaced all unicode escapes with literal characters; reverted attempted 'k' gap fill (`██▞▞`/`██▚▚`) — looked worse visually; restored original `█▌▞▝`/`█▌▚▗`
+
+## Commits
+
+HEAD — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, katatui logo
 
 ## Next Steps
 
