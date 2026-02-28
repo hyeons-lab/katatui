@@ -3,11 +3,11 @@ package com.hyeonslab.katatui.codegen
 import com.hyeonslab.katatui.codegen.model.CFunction
 import com.hyeonslab.katatui.codegen.model.CParam
 import com.hyeonslab.katatui.codegen.model.WidgetGroup
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class WrapperEmitterTest {
   private val ptr = "struct KatatuiBlock *"
@@ -44,35 +44,35 @@ class WrapperEmitterTest {
 
   @Test
   fun `generated file contains class declaration`() {
-    assertTrue("class Block" in emitBlock())
+    emitBlock() shouldContain "class Block"
   }
 
   @Test
   fun `generated file contains close override`() {
     val text = emitBlock()
-    assertTrue("fun close()" in text)
-    assertTrue("katatui_block_free" in text)
+    text shouldContain "fun close()"
+    text shouldContain "katatui_block_free"
   }
 
   @Test
   fun `generated file contains companion invoke factory`() {
     val text = emitBlock()
-    assertTrue("operator fun invoke" in text)
-    assertTrue("katatui_block_new" in text)
+    text shouldContain "operator fun invoke"
+    text shouldContain "katatui_block_new"
   }
 
   @Test
   fun `simple String setter is emitted as mutable property`() {
     val text = emitBlock()
-    assertTrue("var title" in text)
-    assertTrue("katatui_block_set_title" in text)
+    text shouldContain "var title"
+    text shouldContain "katatui_block_set_title"
   }
 
   @Test
   fun `UInt setter is emitted as mutable property`() {
     val text = emitBlock()
-    assertTrue("var borders" in text)
-    assertTrue("katatui_block_set_borders" in text)
+    text shouldContain "var borders"
+    text shouldContain "katatui_block_set_borders"
   }
 
   @Test
@@ -82,7 +82,7 @@ class WrapperEmitterTest {
       WrapperEmitter(dir).emit(listOf(group))
       dir.resolve("com/hyeonslab/katatui/Block.kt").readText()
     }
-    assertFalse("var style" in text, "KatatuiStyle setter must be excluded from codegen")
+    text shouldNotContain "var style"
   }
 
   @Test
@@ -90,22 +90,22 @@ class WrapperEmitterTest {
     val adder =
       CFunction("void", "katatui_block_add_data", listOf(self, CParam("value", "uint64_t")))
     val text = emitBlock(adder)
-    assertTrue("addData" in text)
-    assertTrue("katatui_block_add_data" in text)
+    text shouldContain "addData"
+    text shouldContain "katatui_block_add_data"
   }
 
   @Test
   fun `generated file carries OptIn annotation`() {
     val text = emitBlock()
-    assertTrue("@file:OptIn" in text)
-    assertTrue("ExperimentalForeignApi::class" in text)
+    text shouldContain "@file:OptIn"
+    text shouldContain "ExperimentalForeignApi::class"
   }
 
   @Test
   fun `generated file imports used FFI functions`() {
     val text = emitBlock()
-    assertTrue("import com.hyeonslab.katatui.cinterop.katatui_block_new" in text)
-    assertTrue("import com.hyeonslab.katatui.cinterop.katatui_block_free" in text)
-    assertTrue("import com.hyeonslab.katatui.cinterop.katatui_block_set_title" in text)
+    text shouldContain "import com.hyeonslab.katatui.cinterop.katatui_block_new"
+    text shouldContain "import com.hyeonslab.katatui.cinterop.katatui_block_free"
+    text shouldContain "import com.hyeonslab.katatui.cinterop.katatui_block_set_title"
   }
 }

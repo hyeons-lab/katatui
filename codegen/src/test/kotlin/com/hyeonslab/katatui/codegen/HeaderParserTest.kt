@@ -1,11 +1,11 @@
 package com.hyeonslab.katatui.codegen
 
 import com.hyeonslab.katatui.codegen.model.FunctionRole
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class HeaderParserTest {
   // Minimal header that exercises all parser branches used by katatui.h
@@ -53,15 +53,15 @@ class HeaderParserTest {
   @Test
   fun `parse collects opaque struct typedefs`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    assertTrue("KatatuiBlock" in p.opaqueTypes)
-    assertTrue("KatatuiLineGauge" in p.opaqueTypes)
-    assertTrue("KatatuiBarChart" in p.opaqueTypes)
+    p.opaqueTypes shouldContain "KatatuiBlock"
+    p.opaqueTypes shouldContain "KatatuiLineGauge"
+    p.opaqueTypes shouldContain "KatatuiBarChart"
   }
 
   @Test
   fun `parse does not treat body structs as opaque`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    assertFalse("KatatuiRect" in p.opaqueTypes)
+    p.opaqueTypes shouldNotContain "KatatuiRect"
   }
 
   // --- parse(): structs ---
@@ -69,11 +69,11 @@ class HeaderParserTest {
   @Test
   fun `parse populates body struct with correct fields`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    val rect = assertNotNull(p.structs["KatatuiRect"])
-    assertEquals(4, rect.fields.size)
-    assertEquals("x", rect.fields[0].name)
-    assertEquals("uint16_t", rect.fields[0].type)
-    assertEquals("height", rect.fields[3].name)
+    val rect = checkNotNull(p.structs["KatatuiRect"])
+    rect.fields.size shouldBe 4
+    rect.fields[0].name shouldBe "x"
+    rect.fields[0].type shouldBe "uint16_t"
+    rect.fields[3].name shouldBe "height"
   }
 
   // --- parse(): enums ---
@@ -81,12 +81,12 @@ class HeaderParserTest {
   @Test
   fun `parse populates enum with variants`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    val color = assertNotNull(p.enums["KatatuiColor"])
-    assertEquals(2, color.variants.size)
-    assertEquals("Reset", color.variants[0].name)
-    assertEquals(0, color.variants[0].value)
-    assertEquals("Blue", color.variants[1].name)
-    assertEquals(5, color.variants[1].value)
+    val color = checkNotNull(p.enums["KatatuiColor"])
+    color.variants.size shouldBe 2
+    color.variants[0].name shouldBe "Reset"
+    color.variants[0].value shouldBe 0
+    color.variants[1].name shouldBe "Blue"
+    color.variants[1].value shouldBe 5
   }
 
   // --- parse(): functions ---
@@ -95,20 +95,20 @@ class HeaderParserTest {
   fun `parse collects all katatui_ function declarations`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
     val names = p.functions.map { it.name }
-    assertTrue("katatui_block_new" in names)
-    assertTrue("katatui_block_free" in names)
-    assertTrue("katatui_block_set_title" in names)
-    assertTrue("katatui_line_gauge_new" in names)
-    assertTrue("katatui_bar_chart_add_bar" in names)
+    names shouldContain "katatui_block_new"
+    names shouldContain "katatui_block_free"
+    names shouldContain "katatui_block_set_title"
+    names shouldContain "katatui_line_gauge_new"
+    names shouldContain "katatui_bar_chart_add_bar"
   }
 
   @Test
   fun `parse extracts function parameters`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
     val setter = p.functions.first { it.name == "katatui_block_set_title" }
-    assertEquals(2, setter.params.size)
-    assertEquals("block", setter.params[0].name)
-    assertEquals("title", setter.params[1].name)
+    setter.params.size shouldBe 2
+    setter.params[0].name shouldBe "block"
+    setter.params[1].name shouldBe "title"
   }
 
   // --- widgetGroups() ---
@@ -116,19 +116,17 @@ class HeaderParserTest {
   @Test
   fun `widgetGroups converts multi-word CamelCase types to snake_case prefix`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    val groups = p.widgetGroups()
-    val names = groups.map { it.kotlinName }
-    assertTrue("LineGauge" in names, "Expected LineGauge but got $names")
-    assertTrue("BarChart" in names, "Expected BarChart but got $names")
+    val names = p.widgetGroups().map { it.kotlinName }
+    names shouldContain "LineGauge"
+    names shouldContain "BarChart"
   }
 
   @Test
   fun `widgetGroups excludes entries in the exclusion list`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    val groups = p.widgetGroups()
-    val names = groups.map { it.kotlinName }
-    assertFalse("Terminal" in names, "Terminal must be excluded")
-    assertFalse("Frame" in names, "Frame must be excluded")
+    val names = p.widgetGroups().map { it.kotlinName }
+    names shouldNotContain "Terminal"
+    names shouldNotContain "Frame"
   }
 
   @Test
@@ -141,27 +139,23 @@ class HeaderParserTest {
     val listStateGroup = groups.find { it.cName == "KatatuiListState" }
     // Must be excluded via the explicit exclusion list ("list_state" maps to excluded)
     // regardless of whether list_state_new was in functions
-    assertTrue(
-      listStateGroup == null,
-      "list_state group must be absent (excluded via exclusion list)",
-    )
+    listStateGroup shouldBe null
   }
 
   @Test
   fun `widgetGroups returns correct cName and kotlinName for single-word widget`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    val block = p.widgetGroups().find { it.kotlinName == "Block" }
-    assertNotNull(block)
-    assertEquals("KatatuiBlock", block.cName)
+    val block = checkNotNull(p.widgetGroups().find { it.kotlinName == "Block" })
+    block.cName shouldBe "KatatuiBlock"
   }
 
   @Test
   fun `widgetGroups assigns constructor and setter roles correctly`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
-    val block = p.widgetGroups().find { it.kotlinName == "Block" }!!
-    assertNotNull(block.constructor)
-    assertEquals(FunctionRole.Constructor, block.constructor!!.role)
-    assertEquals(1, block.setters.size)
-    assertEquals("katatui_block_set_title", block.setters[0].name)
+    val block = checkNotNull(p.widgetGroups().find { it.kotlinName == "Block" })
+    block.constructor shouldNotBe null
+    block.constructor!!.role shouldBe FunctionRole.Constructor
+    block.setters.size shouldBe 1
+    block.setters[0].name shouldBe "katatui_block_set_title"
   }
 }

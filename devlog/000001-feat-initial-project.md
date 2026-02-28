@@ -286,13 +286,37 @@ HEAD — chore: update devlog
 
 **cargo:rerun-if-changed regression from session 10:** build.rs added `println!("cargo:rerun-if-changed=cbindgen.toml")` to document the config dependency. This implicitly restricted Cargo's re-run trigger to cbindgen.toml only, silently preventing header regeneration on Rust source edits. Fixed by removing the line entirely.
 
+## What Changed (session 12 — kotest assertions)
+
+2026-02-27T16:25-0800 codegen/build.gradle.kts — added `testImplementation(libs.kotest.assertions.core)` (was missing; katatui already had it)
+2026-02-27T16:25-0800 codegen/src/test/.../CFunctionTest.kt — replaced assertEquals/assertNull with shouldBe/shouldBe(null)
+2026-02-27T16:25-0800 codegen/src/test/.../HeaderParserTest.kt — replaced assertEquals/assertTrue/assertFalse/assertNotNull with shouldBe/shouldContain/shouldNotContain/checkNotNull; replaced assertFalse(x == null) with shouldBe(null)
+2026-02-27T16:25-0800 codegen/src/test/.../WrapperEmitterTest.kt — replaced assertTrue/assertFalse with shouldContain/shouldNotContain
+2026-02-27T16:25-0800 katatui/src/commonTest/.../StyleTest.kt — replaced assertEquals/assertTrue/assertFalse with shouldBe
+2026-02-27T16:25-0800 katatui/src/commonTest/.../ColorTest.kt — replaced assertEquals/assertNotEquals/assertIs with shouldBe/shouldNotBe/shouldBeInstanceOf
+2026-02-27T16:25-0800 katatui/src/commonTest/.../BordersTest.kt — replaced assertEquals with shouldBe
+2026-02-27T16:25-0800 katatui/src/commonTest/.../ConstraintTest.kt — replaced assertEquals/assertIs with shouldBe/shouldBeInstanceOf
+2026-02-27T16:25-0800 katatui/src/nativeTest/.../RectTest.kt — replaced assertEquals with shouldBe
+2026-02-27T16:25-0800 katatui/src/nativeTest/.../widgets/StyleNativeTest.kt — replaced assertEquals/assertTrue/assertFalse with shouldBe
+2026-02-27T16:25-0800 katatui/src/nativeTest/.../EnumMappingTest.kt — replaced assertEquals with shouldBe
+
+## Decisions (session 12)
+
+2026-02-27T16:25-0800 shouldBe(null) instead of shouldBeNull() — kotest 6.1.3's shouldBeNull() has a different import path than expected; shouldBe(null) uses the already-imported shouldBe function and is unambiguous
+2026-02-27T16:25-0800 checkNotNull() for null extraction in tests — shouldNotBeNull() failed to infer the type parameter 'T' in certain chains (find().shouldNotBeNull()); stdlib checkNotNull() is unambiguous and gives the compiler a clear non-null type
+
+## Issues (session 12)
+
+**shouldBeNull/shouldNotBeNull unresolved:** `import io.kotest.matchers.shouldBeNull` was unresolved in kotest 6.1.3. Fixed by using `shouldBe(null)` / `shouldNotBe(null)` instead, which requires only the existing `shouldBe` import.
+**shouldNotBeNull() type inference failure:** Calling `.shouldNotBeNull()` on a chained `List.find()` result caused "Cannot infer type for type parameter 'V'" errors on subsequent uses of the returned value. Replaced with `checkNotNull()` which the compiler always handles correctly.
+
 ## Commits
 
 3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
 0f0440b — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
-HEAD — refactor: consolidate Marker enums and fix review issues
+ac16d1b — refactor: consolidate Marker enums and fix review issues
+HEAD — test: migrate all assertions to kotest
 
 ## Next Steps
 
 - Push and update PR #1
-- Refactor tests to use kotest

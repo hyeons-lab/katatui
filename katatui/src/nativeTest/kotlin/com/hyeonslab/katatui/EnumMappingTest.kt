@@ -26,8 +26,8 @@ import com.hyeonslab.katatui.cinterop.KatatuiScrollbarOrientation_HorizontalBott
 import com.hyeonslab.katatui.cinterop.KatatuiScrollbarOrientation_HorizontalTop
 import com.hyeonslab.katatui.cinterop.KatatuiScrollbarOrientation_VerticalLeft
 import com.hyeonslab.katatui.cinterop.KatatuiScrollbarOrientation_VerticalRight
+import io.kotest.matchers.shouldBe
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlinx.cinterop.ExperimentalForeignApi
 
 class EnumMappingTest {
@@ -36,145 +36,137 @@ class EnumMappingTest {
 
   @Test
   fun `Direction Horizontal maps to KatatuiDirection_Horizontal`() {
-    assertEquals(KatatuiDirection_Horizontal, Direction.Horizontal.toCDirection())
+    Direction.Horizontal.toCDirection() shouldBe KatatuiDirection_Horizontal
   }
 
   @Test
   fun `Direction Vertical maps to KatatuiDirection_Vertical`() {
-    assertEquals(KatatuiDirection_Vertical, Direction.Vertical.toCDirection())
+    Direction.Vertical.toCDirection() shouldBe KatatuiDirection_Vertical
   }
 
   // --- Constraint ---
 
   @Test
   fun `Constraint Length maps to KatatuiConstraintKind_Length`() {
-    assertEquals(KatatuiConstraintKind_Length, Constraint.Length(0).toCKind())
+    Constraint.Length(0).toCKind() shouldBe KatatuiConstraintKind_Length
   }
 
   @Test
   fun `Constraint Percentage maps to KatatuiConstraintKind_Percentage`() {
-    assertEquals(KatatuiConstraintKind_Percentage, Constraint.Percentage(0).toCKind())
+    Constraint.Percentage(0).toCKind() shouldBe KatatuiConstraintKind_Percentage
   }
 
   @Test
   fun `Constraint Min maps to KatatuiConstraintKind_Min`() {
-    assertEquals(KatatuiConstraintKind_Min, Constraint.Min(0).toCKind())
+    Constraint.Min(0).toCKind() shouldBe KatatuiConstraintKind_Min
   }
 
   @Test
   fun `Constraint Max maps to KatatuiConstraintKind_Max`() {
-    assertEquals(KatatuiConstraintKind_Max, Constraint.Max(0).toCKind())
+    Constraint.Max(0).toCKind() shouldBe KatatuiConstraintKind_Max
   }
 
   @Test
   fun `Constraint Fill maps to KatatuiConstraintKind_Fill`() {
-    assertEquals(KatatuiConstraintKind_Fill, Constraint.Fill(0).toCKind())
+    Constraint.Fill(0).toCKind() shouldBe KatatuiConstraintKind_Fill
   }
 
   // --- Marker ---
 
   @Test
   fun `Marker Dot maps to KatatuiMarker_Dot`() {
-    assertEquals(KatatuiMarker_Dot, Marker.Dot.toCMarker())
+    Marker.Dot.toCMarker() shouldBe KatatuiMarker_Dot
   }
 
   @Test
   fun `Marker Block maps to KatatuiMarker_Block`() {
-    assertEquals(KatatuiMarker_Block, Marker.Block.toCMarker())
+    Marker.Block.toCMarker() shouldBe KatatuiMarker_Block
   }
 
   @Test
   fun `Marker Bar maps to KatatuiMarker_Bar`() {
-    assertEquals(KatatuiMarker_Bar, Marker.Bar.toCMarker())
+    Marker.Bar.toCMarker() shouldBe KatatuiMarker_Bar
   }
 
   @Test
   fun `Marker Braille maps to KatatuiMarker_Braille`() {
-    assertEquals(KatatuiMarker_Braille, Marker.Braille.toCMarker())
+    Marker.Braille.toCMarker() shouldBe KatatuiMarker_Braille
   }
 
   @Test
   fun `Marker HalfBlock maps to KatatuiMarker_HalfBlock`() {
-    assertEquals(KatatuiMarker_HalfBlock, Marker.HalfBlock.toCMarker())
+    Marker.HalfBlock.toCMarker() shouldBe KatatuiMarker_HalfBlock
   }
 
   @Test
   fun `Marker Quadrant maps to KatatuiMarker_Quadrant`() {
-    assertEquals(KatatuiMarker_Quadrant, Marker.Quadrant.toCMarker())
+    Marker.Quadrant.toCMarker() shouldBe KatatuiMarker_Quadrant
   }
 
   // --- GraphType ---
 
   @Test
   fun `GraphType Scatter maps to KatatuiGraphType_Scatter`() {
-    assertEquals(KatatuiGraphType_Scatter, GraphType.Scatter.toCGraphType())
+    GraphType.Scatter.toCGraphType() shouldBe KatatuiGraphType_Scatter
   }
 
   @Test
   fun `GraphType Line maps to KatatuiGraphType_Line`() {
-    assertEquals(KatatuiGraphType_Line, GraphType.Line.toCGraphType())
+    GraphType.Line.toCGraphType() shouldBe KatatuiGraphType_Line
   }
 
   @Test
   fun `GraphType Bar maps to KatatuiGraphType_Bar`() {
-    assertEquals(KatatuiGraphType_Bar, GraphType.Bar.toCGraphType())
+    GraphType.Bar.toCGraphType() shouldBe KatatuiGraphType_Bar
   }
 
   // --- LogoSize ---
 
   @Test
   fun `LogoSize Tiny maps to KatatuiLogoSize_Tiny`() {
-    assertEquals(KatatuiLogoSize_Tiny, LogoSize.Tiny.toCLogoSize())
+    LogoSize.Tiny.toCLogoSize() shouldBe KatatuiLogoSize_Tiny
   }
 
   @Test
   fun `LogoSize Small maps to KatatuiLogoSize_Small`() {
-    assertEquals(KatatuiLogoSize_Small, LogoSize.Small.toCLogoSize())
+    LogoSize.Small.toCLogoSize() shouldBe KatatuiLogoSize_Small
   }
 
   // --- MascotEyeColor ---
 
   @Test
   fun `MascotEyeColor Default maps to KatatuiMascotEyeColor_Default`() {
-    assertEquals(KatatuiMascotEyeColor_Default, MascotEyeColor.Default.toCEyeColor())
+    MascotEyeColor.Default.toCEyeColor() shouldBe KatatuiMascotEyeColor_Default
   }
 
   @Test
   fun `MascotEyeColor Red maps to KatatuiMascotEyeColor_Red`() {
-    assertEquals(KatatuiMascotEyeColor_Red, MascotEyeColor.Red.toCEyeColor())
+    MascotEyeColor.Red.toCEyeColor() shouldBe KatatuiMascotEyeColor_Red
   }
 
   // --- ScrollbarOrientation ---
 
   @Test
   fun `ScrollbarOrientation VerticalRight maps to KatatuiScrollbarOrientation_VerticalRight`() {
-    assertEquals(
-      KatatuiScrollbarOrientation_VerticalRight,
-      ScrollbarOrientation.VerticalRight.toCOrientation(),
-    )
+    ScrollbarOrientation.VerticalRight.toCOrientation() shouldBe
+      KatatuiScrollbarOrientation_VerticalRight
   }
 
   @Test
   fun `ScrollbarOrientation VerticalLeft maps to KatatuiScrollbarOrientation_VerticalLeft`() {
-    assertEquals(
-      KatatuiScrollbarOrientation_VerticalLeft,
-      ScrollbarOrientation.VerticalLeft.toCOrientation(),
-    )
+    ScrollbarOrientation.VerticalLeft.toCOrientation() shouldBe
+      KatatuiScrollbarOrientation_VerticalLeft
   }
 
   @Test
   fun `ScrollbarOrientation HorizontalBottom maps to KatatuiScrollbarOrientation_HorizontalBottom`() {
-    assertEquals(
-      KatatuiScrollbarOrientation_HorizontalBottom,
-      ScrollbarOrientation.HorizontalBottom.toCOrientation(),
-    )
+    ScrollbarOrientation.HorizontalBottom.toCOrientation() shouldBe
+      KatatuiScrollbarOrientation_HorizontalBottom
   }
 
   @Test
   fun `ScrollbarOrientation HorizontalTop maps to KatatuiScrollbarOrientation_HorizontalTop`() {
-    assertEquals(
-      KatatuiScrollbarOrientation_HorizontalTop,
-      ScrollbarOrientation.HorizontalTop.toCOrientation(),
-    )
+    ScrollbarOrientation.HorizontalTop.toCOrientation() shouldBe
+      KatatuiScrollbarOrientation_HorizontalTop
   }
 }

@@ -5,10 +5,8 @@ import com.hyeonslab.katatui.cinterop.KatatuiColor_Indexed
 import com.hyeonslab.katatui.cinterop.KatatuiColor_Reset
 import com.hyeonslab.katatui.cinterop.KatatuiColor_Rgb
 import com.hyeonslab.katatui.cinterop.KatatuiColor_White
+import io.kotest.matchers.shouldBe
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 
@@ -19,20 +17,20 @@ class StyleNativeTest {
   @Test
   fun `Rgb fg sets color tag and payload fields`() {
     Style(fg = Color.Rgb(10u, 20u, 30u)).toCValue().useContents {
-      assertEquals(KatatuiColor_Rgb, fg)
-      assertEquals(10.toUByte(), fg_r)
-      assertEquals(20.toUByte(), fg_g)
-      assertEquals(30.toUByte(), fg_b)
+      fg shouldBe KatatuiColor_Rgb
+      fg_r shouldBe 10.toUByte()
+      fg_g shouldBe 20.toUByte()
+      fg_b shouldBe 30.toUByte()
     }
   }
 
   @Test
   fun `Rgb bg sets color tag and payload fields`() {
     Style(bg = Color.Rgb(50u, 100u, 200u)).toCValue().useContents {
-      assertEquals(KatatuiColor_Rgb, bg)
-      assertEquals(50.toUByte(), bg_r)
-      assertEquals(100.toUByte(), bg_g)
-      assertEquals(200.toUByte(), bg_b)
+      bg shouldBe KatatuiColor_Rgb
+      bg_r shouldBe 50.toUByte()
+      bg_g shouldBe 100.toUByte()
+      bg_b shouldBe 200.toUByte()
     }
   }
 
@@ -41,16 +39,16 @@ class StyleNativeTest {
   @Test
   fun `Indexed fg sets color tag and index field`() {
     Style(fg = Color.Indexed(42u)).toCValue().useContents {
-      assertEquals(KatatuiColor_Indexed, fg)
-      assertEquals(42.toUByte(), fg_index)
+      fg shouldBe KatatuiColor_Indexed
+      fg_index shouldBe 42.toUByte()
     }
   }
 
   @Test
   fun `Indexed bg sets color tag and index field`() {
     Style(bg = Color.Indexed(100u)).toCValue().useContents {
-      assertEquals(KatatuiColor_Indexed, bg)
-      assertEquals(100.toUByte(), bg_index)
+      bg shouldBe KatatuiColor_Indexed
+      bg_index shouldBe 100.toUByte()
     }
   }
 
@@ -58,44 +56,44 @@ class StyleNativeTest {
 
   @Test
   fun `named color Reset maps to cinterop Reset`() {
-    Style(fg = Color.Reset).toCValue().useContents { assertEquals(KatatuiColor_Reset, fg) }
+    Style(fg = Color.Reset).toCValue().useContents { fg shouldBe KatatuiColor_Reset }
   }
 
   @Test
   fun `named color Blue maps to cinterop Blue`() {
-    Style(fg = Color.Blue).toCValue().useContents { assertEquals(KatatuiColor_Blue, fg) }
+    Style(fg = Color.Blue).toCValue().useContents { fg shouldBe KatatuiColor_Blue }
   }
 
   @Test
   fun `named color White maps to cinterop White`() {
-    Style(fg = Color.White).toCValue().useContents { assertEquals(KatatuiColor_White, fg) }
+    Style(fg = Color.White).toCValue().useContents { fg shouldBe KatatuiColor_White }
   }
 
   // --- modifiers ---
 
   @Test
   fun `bold is propagated`() {
-    Style(bold = true).toCValue().useContents { assertTrue(bold) }
+    Style(bold = true).toCValue().useContents { bold shouldBe true }
   }
 
   @Test
   fun `italic is propagated`() {
-    Style(italic = true).toCValue().useContents { assertTrue(italic) }
+    Style(italic = true).toCValue().useContents { italic shouldBe true }
   }
 
   @Test
   fun `underlined is propagated`() {
-    Style(underlined = true).toCValue().useContents { assertTrue(underlined) }
+    Style(underlined = true).toCValue().useContents { underlined shouldBe true }
   }
 
   @Test
   fun `dim is propagated`() {
-    Style(dim = true).toCValue().useContents { assertTrue(dim) }
+    Style(dim = true).toCValue().useContents { dim shouldBe true }
   }
 
   @Test
   fun `crossedOut maps to crossed_out field`() {
-    Style(crossedOut = true).toCValue().useContents { assertTrue(crossed_out) }
+    Style(crossedOut = true).toCValue().useContents { crossed_out shouldBe true }
   }
 
   // --- default style ---
@@ -103,13 +101,13 @@ class StyleNativeTest {
   @Test
   fun `default Style produces Reset fg and bg with no modifiers`() {
     Style().toCValue().useContents {
-      assertEquals(KatatuiColor_Reset, fg)
-      assertEquals(KatatuiColor_Reset, bg)
-      assertFalse(bold)
-      assertFalse(italic)
-      assertFalse(underlined)
-      assertFalse(dim)
-      assertFalse(crossed_out)
+      fg shouldBe KatatuiColor_Reset
+      bg shouldBe KatatuiColor_Reset
+      bold shouldBe false
+      italic shouldBe false
+      underlined shouldBe false
+      dim shouldBe false
+      crossed_out shouldBe false
     }
   }
 }

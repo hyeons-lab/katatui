@@ -3,9 +3,8 @@ package com.hyeonslab.katatui.codegen
 import com.hyeonslab.katatui.codegen.model.CFunction
 import com.hyeonslab.katatui.codegen.model.CParam
 import com.hyeonslab.katatui.codegen.model.FunctionRole
+import io.kotest.matchers.shouldBe
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class CFunctionTest {
   private fun fn(name: String, vararg params: String) =
@@ -15,62 +14,62 @@ class CFunctionTest {
 
   @Test
   fun `_new suffix maps to Constructor`() {
-    assertEquals(FunctionRole.Constructor, fn("katatui_block_new").role)
+    fn("katatui_block_new").role shouldBe FunctionRole.Constructor
   }
 
   @Test
   fun `_free suffix maps to Destructor`() {
-    assertEquals(FunctionRole.Destructor, fn("katatui_block_free").role)
+    fn("katatui_block_free").role shouldBe FunctionRole.Destructor
   }
 
   @Test
   fun `_set_ infix maps to Setter`() {
-    assertEquals(FunctionRole.Setter, fn("katatui_block_set_title").role)
+    fn("katatui_block_set_title").role shouldBe FunctionRole.Setter
   }
 
   @Test
   fun `_add_ infix maps to Adder`() {
-    assertEquals(FunctionRole.Adder, fn("katatui_sparkline_add_data").role)
+    fn("katatui_sparkline_add_data").role shouldBe FunctionRole.Adder
   }
 
   @Test
   fun `_render_ infix maps to Renderer`() {
-    assertEquals(FunctionRole.Renderer, fn("katatui_frame_render_widget").role)
+    fn("katatui_frame_render_widget").role shouldBe FunctionRole.Renderer
   }
 
   @Test
   fun `_split suffix maps to Split`() {
-    assertEquals(FunctionRole.Split, fn("katatui_layout_split").role)
+    fn("katatui_layout_split").role shouldBe FunctionRole.Split
   }
 
   @Test
   fun `unrecognised name maps to Other`() {
-    assertEquals(FunctionRole.Other, fn("katatui_event_poll").role)
+    fn("katatui_event_poll").role shouldBe FunctionRole.Other
   }
 
   // --- setterProperty ---
 
   @Test
   fun `setterProperty extracts name after _set_`() {
-    assertEquals("title", fn("katatui_block_set_title").setterProperty)
+    fn("katatui_block_set_title").setterProperty shouldBe "title"
   }
 
   @Test
   fun `setterProperty preserves underscores for multi-word names`() {
-    assertEquals("bar_width", fn("katatui_bar_chart_set_bar_width").setterProperty)
+    fn("katatui_bar_chart_set_bar_width").setterProperty shouldBe "bar_width"
   }
 
   @Test
   fun `setterProperty is null for non-setter`() {
-    assertNull(fn("katatui_block_new").setterProperty)
-    assertNull(fn("katatui_sparkline_add_data").setterProperty)
+    fn("katatui_block_new").setterProperty shouldBe null
+    fn("katatui_sparkline_add_data").setterProperty shouldBe null
   }
 
   // --- group ---
 
   @Test
   fun `group returns first component of function name`() {
-    assertEquals("block", fn("katatui_block_new").group)
-    assertEquals("sparkline", fn("katatui_sparkline_add_data").group)
+    fn("katatui_block_new").group shouldBe "block"
+    fn("katatui_sparkline_add_data").group shouldBe "sparkline"
   }
 }
