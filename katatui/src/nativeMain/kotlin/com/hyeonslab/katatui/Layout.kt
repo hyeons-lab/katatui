@@ -54,6 +54,8 @@ internal constructor(private val dir: Direction, private val constraints: Array<
         katatui_layout_add_constraint(layout, cConstraint)
       }
       return memScoped {
+        // +1 is required by the C API contract: katatui_layout_split expects
+        // a buffer of at least constraints.len() + 1 elements (see layout.rs).
         val maxRects = constraints.size + 1
         val outRects = allocArray<KatatuiRect>(maxRects)
         val count = katatui_layout_split(layout, area.toCValue(), outRects).toInt()

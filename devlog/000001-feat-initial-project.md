@@ -466,8 +466,21 @@ HEAD — refactor: full MVI architecture for sample-app (AppStore, AppState, App
 
 ## Commits
 
-HEAD — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, katatui logo
+e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, katatui logo
 
-## Next Steps
+## What Changed (session 22 — PR review fixes)
 
-- Push and update PR #1
+2026-02-28T07:17-0800 katatui-ffi/src/widgets/chart.rs — replaced `eprintln!` warning in `katatui_chart_free` with auto-commit: if `current_data` is non-empty when the chart is freed, the pending dataset is committed rather than silently dropped; removes invisible stderr noise while preventing data loss
+2026-02-28T07:17-0800 katatui-ffi/src/lib.rs — added `// SAFETY:` comment on the `render_stateful_widget` call (scrollbar state lifetime invariant: caller must not free `state` between `begin_draw` and `end_draw`; Kotlin wrapper guarantees `ScrollbarState` outlives the draw closure)
+2026-02-28T07:17-0800 katatui/src/nativeMain/.../BlockExt.kt — moved `@OptIn(ExperimentalForeignApi::class)` from function to file level (`@file:OptIn`) for consistency with all other `*Ext.kt` files
+2026-02-28T07:17-0800 katatui/src/nativeMain/.../ScrollbarState.kt — moved `@OptIn(ExperimentalForeignApi::class)` from class to file level (`@file:OptIn`) for consistency
+2026-02-28T07:17-0800 katatui/src/nativeMain/.../Layout.kt — added comment on `maxRects = constraints.size + 1` explaining this is a C API requirement documented in `layout.rs`
+
+## Decisions (session 22)
+
+2026-02-28T07:17-0800 Auto-commit on free instead of removing eprintln! — removing the warning entirely would make the data-loss silent with no fix; auto-committing converts the bug into correct behavior (pending dataset is preserved); consistent with the "be liberal in what you accept" principle for resource destructors
+2026-02-28T07:17-0800 `@file:OptIn` over per-declaration `@OptIn` — all other `*Ext.kt` files use file-level opt-in; this avoids having to annotate every new function added later and is the idiomatic Kotlin convention for files that are uniformly experimental
+
+## Commits
+
+HEAD — fix: address PR review comments (chart, scrollbar, OptIn, layout)

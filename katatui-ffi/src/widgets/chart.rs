@@ -92,12 +92,17 @@ pub extern "C" fn katatui_chart_new() -> *mut KatatuiChart {
 #[no_mangle]
 pub extern "C" fn katatui_chart_free(chart: *mut KatatuiChart) {
     if !chart.is_null() {
-        let c = unsafe { &*chart };
+        let c = unsafe { &mut *chart };
+        // Auto-commit any pending dataset so callers that omit an explicit
+        // commitDataset() call do not silently lose data points.
         if !c.current_data.is_empty() {
-            eprintln!(
-                "[katatui] Chart freed with {} uncommitted data points; call commitDataset() first",
-                c.current_data.len()
-            );
+            c.datasets.push(KatatuiDataset {
+                name: std::mem::take(&mut c.current_name),
+                data: std::mem::take(&mut c.current_data),
+                graph_type: c.current_graph_type,
+                marker: c.current_marker,
+                style: c.current_style.take(),
+            });
         }
         unsafe { drop(Box::from_raw(chart)) };
     }

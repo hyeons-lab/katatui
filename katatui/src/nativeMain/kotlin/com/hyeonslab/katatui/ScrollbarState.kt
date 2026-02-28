@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 package com.hyeonslab.katatui
 
 import cnames.structs.KatatuiScrollbarState
@@ -9,7 +11,6 @@ import com.hyeonslab.katatui.cinterop.katatui_scrollbar_state_set_viewport_conte
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 
-@OptIn(ExperimentalForeignApi::class)
 class ScrollbarState internal constructor(internal val ptr: CPointer<KatatuiScrollbarState>) :
   AutoCloseable {
 

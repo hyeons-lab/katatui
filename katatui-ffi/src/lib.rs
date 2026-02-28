@@ -360,6 +360,10 @@ pub extern "C" fn katatui_frame_render_scrollbar(
         if let Some(style) = end_style {
             widget = widget.end_style(ratatui::style::Style::from(style));
         }
+        // SAFETY: `state` must remain valid for the duration of the draw call
+        // (between begin_draw and end_draw). The Kotlin wrapper guarantees this
+        // because ScrollbarState outlives the draw closure — it is only freed
+        // after the Frame is consumed.
         rf.render_stateful_widget(widget, area.into(), &mut unsafe { &mut *state }.inner);
     });
     unsafe { (*frame).ops.push(op) };
