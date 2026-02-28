@@ -3,6 +3,7 @@
 package com.hyeonslab.katatui
 
 import com.hyeonslab.katatui.cinterop.katatui_event_poll
+import com.hyeonslab.katatui.cinterop.katatui_event_read_extended
 import com.hyeonslab.katatui.cinterop.katatui_event_read_key_code
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -58,3 +59,30 @@ const val KEY_ENTER: Char = '\r'
 
 /** Key code for the Escape key. */
 const val KEY_ESC: Char = '\u001B'
+
+/** Terminal event returned by [readEvent]. */
+sealed interface TerminalEvent {
+  /** Synthetic tick: no key was pressed within the poll interval. */
+  object Tick : TerminalEvent
+
+  /** A key was pressed. [key] is the character, or `null` for unknown keys. */
+  data class Key(val key: Char?) : TerminalEvent
+
+  /** A non-key event (real resize, mouse, paste, etc.) — safe to ignore. */
+  object Other : TerminalEvent
+}
+
+/**
+ * Blocking event read with tick timeout.
+ *
+ * Blocks until either a key is pressed or [timeoutMs] milliseconds elapse. Returns:
+ * - [TerminalEvent.Tick] when the timeout elapses (use as an animation tick signal)
+ * - [TerminalEvent.Key] on a key press
+ * - [TerminalEvent.Other] for non-key events (resize, mouse, paste, etc.)
+ */
+fun readEvent(timeoutMs: Long = 100L): TerminalEvent =
+  when (val code = katatui_event_read_extended(timeoutMs.toULong()).toInt()) {
+    256 -> TerminalEvent.Tick
+    0 -> TerminalEvent.Other
+    else -> TerminalEvent.Key(code.toChar())
+  }

@@ -3,6 +3,7 @@ pub mod types;
 pub mod widgets;
 
 use crossterm::event::{self, Event, KeyEventKind};
+use std::time::Duration;
 use terminal::{KatatuiFrame, KatatuiTerminal};
 use types::KatatuiRect;
 use widgets::{
@@ -526,5 +527,36 @@ pub extern "C" fn katatui_event_read_key_code() -> u8 {
             }
         }
         _ => 0,
+    }
+}
+
+/// Blocking event read with tick timeout. Blocks until either a terminal event arrives or
+/// `timeout_ms` milliseconds elapse. Returns:
+///   256 = Tick (timeout elapsed — no event within the interval)
+///   1–255 = key code (same mapping as katatui_event_read_key_code)
+///   0 = other/unknown event (real resize, mouse, paste, etc.)
+#[no_mangle]
+pub extern "C" fn katatui_event_read_extended(timeout_ms: u64) -> u32 {
+    match event::poll(Duration::from_millis(timeout_ms)) {
+        Ok(true) => match event::read() {
+            Ok(Event::Key(k)) if k.kind == KeyEventKind::Press => {
+                use crossterm::event::KeyCode;
+                let code: u8 = match k.code {
+                    KeyCode::Char(c) if (c as u32) < 128 => c as u8,
+                    KeyCode::Backspace => 0x08,
+                    KeyCode::Tab => 0x09,
+                    KeyCode::Enter => b'\r',
+                    KeyCode::Esc => 0x1B,
+                    KeyCode::Up => 0xF1,
+                    KeyCode::Down => 0xF2,
+                    KeyCode::Left => 0xF3,
+                    KeyCode::Right => 0xF4,
+                    _ => 0,
+                };
+                code as u32
+            }
+            _ => 0,
+        },
+        _ => 256, // timeout = Tick
     }
 }

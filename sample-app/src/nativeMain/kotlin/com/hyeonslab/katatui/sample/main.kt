@@ -12,6 +12,7 @@ import com.hyeonslab.katatui.Picker
 import com.hyeonslab.katatui.Rect
 import com.hyeonslab.katatui.ScrollbarOrientation
 import com.hyeonslab.katatui.ScrollbarState
+import com.hyeonslab.katatui.TerminalEvent
 import com.hyeonslab.katatui.addWidth
 import com.hyeonslab.katatui.bar
 import com.hyeonslab.katatui.barChart
@@ -32,8 +33,7 @@ import com.hyeonslab.katatui.logo
 import com.hyeonslab.katatui.mascot
 import com.hyeonslab.katatui.nextRow
 import com.hyeonslab.katatui.paragraph
-import com.hyeonslab.katatui.poll
-import com.hyeonslab.katatui.readKey
+import com.hyeonslab.katatui.readEvent
 import com.hyeonslab.katatui.rectangle
 import com.hyeonslab.katatui.scrollbar
 import com.hyeonslab.katatui.setDatasetGraphType
@@ -99,55 +99,68 @@ fun main() {
     var previousTab = -1
 
     while (appStore.state.running) {
-      appStore.dispatch(AppIntent.Tick)
-      val state = appStore.state
-
-      // Free image resources when leaving the Image tab so memory is not held indefinitely.
-      // They are recreated on the next visit.
-      if (previousTab == 6 && state.activeTab != 6) {
-        imageFuture?.cancel()
-        imageFuture = null
-        imageState?.close()
-        imageState = null
-      }
-      previousTab = state.activeTab
-
-      draw {
-        block(size) { setStyle(Style(bg = Color.Rgb(41u, 44u, 51u))) }
-        val areas = Layout.vertical(Constraint.Length(3), Constraint.Fill(1)).split(size)
-        val tabRow = areas[0]
-        val content = areas[1]
-
-        // Tab bar
-        tabs(tabRow) {
-          TAB_NAMES.forEach { addTitle(it) }
-          selected = state.activeTab.toUInt()
-        }
-
-        // Clear the content area on every frame to prevent cross-tab artifacts
-        clear(content)
-
-        when (state.activeTab) {
-          0 -> renderDashboard(content, state.history, state.cpuPct, state.memPct)
-          1 -> renderChart(content, state.tick)
-          2 -> renderCanvas(content, state.tick)
-          3 -> renderScrollbar(content, scrollbarState, state.scrollOffset)
-          4 -> renderBranding(content, state.tick)
-          5 -> renderWidgetTable(content)
-          6 -> {
-            val future =
-              imageFuture
-                ?: scope
-                  .async { ImageState.fromBytesWithPicker(LEAP_DARK_PNG, picker) }
-                  .also { imageFuture = it }
-            if (imageState == null && future.isCompleted) imageState = future.getCompleted()
-            renderImageTab(content, imageState, loading = !future.isCompleted)
+      // readEvent() blocks until a key is pressed (immediate return) or 100 ms elapses (Tick).
+      // The OS-level poll keeps CPU near zero while the app is idle.
+      val shouldRender =
+        when (val ev = readEvent()) {
+          TerminalEvent.Tick -> {
+            appStore.dispatch(AppIntent.Tick)
+            val state = appStore.state
+            // Free image resources when leaving the Image tab so memory is not held indefinitely.
+            // They are recreated on the next visit.
+            if (previousTab == 6 && state.activeTab != 6) {
+              imageFuture?.cancel()
+              imageFuture = null
+              imageState?.close()
+              imageState = null
+            }
+            previousTab = state.activeTab
+            true
           }
-          7 -> renderKatatuiCodeTab(content, state.codeState, env)
+          is TerminalEvent.Key -> {
+            appStore.dispatch(AppIntent.KeyPress(ev.key))
+            true
+          }
+          TerminalEvent.Other -> false
+        }
+
+      if (shouldRender) {
+        val state = appStore.state
+        draw {
+          block(size) { setStyle(Style(bg = Color.Rgb(41u, 44u, 51u))) }
+          val areas = Layout.vertical(Constraint.Length(3), Constraint.Fill(1)).split(size)
+          val tabRow = areas[0]
+          val content = areas[1]
+
+          // Tab bar
+          tabs(tabRow) {
+            TAB_NAMES.forEach { addTitle(it) }
+            selected = state.activeTab.toUInt()
+          }
+
+          // Clear the content area on every frame to prevent cross-tab artifacts
+          clear(content)
+
+          when (state.activeTab) {
+            0 -> renderDashboard(content, state.history, state.cpuPct, state.memPct)
+            1 -> renderChart(content, state.tick)
+            2 -> renderCanvas(content, state.tick)
+            3 -> renderScrollbar(content, scrollbarState, state.scrollOffset)
+            4 -> renderBranding(content, state.tick)
+            5 -> renderWidgetTable(content)
+            6 -> {
+              val future =
+                imageFuture
+                  ?: scope
+                    .async { ImageState.fromBytesWithPicker(LEAP_DARK_PNG, picker) }
+                    .also { imageFuture = it }
+              if (imageState == null && future.isCompleted) imageState = future.getCompleted()
+              renderImageTab(content, imageState, loading = !future.isCompleted)
+            }
+            7 -> renderKatatuiCodeTab(content, state.codeState, env)
+          }
         }
       }
-
-      if (poll()) appStore.dispatch(AppIntent.KeyPress(readKey()))
     }
 
     scope.cancel()

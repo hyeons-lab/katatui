@@ -483,4 +483,26 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 
 ## Commits
 
-HEAD — fix: address PR review comments (chart, scrollbar, OptIn, layout)
+4e2de2a — fix: address PR review comments (chart, scrollbar, OptIn, layout)
+
+## What Changed (session 23 — event-driven render loop)
+
+2026-02-28T09:09-0800 katatui-ffi/src/lib.rs — added `use std::time::Duration`; added `katatui_event_read_extended(timeout_ms: u64) -> u32`: blocks via `event::poll(timeout)`, returns 256 on timeout (Tick), key code on key press, 0 on other events
+2026-02-28T09:09-0800 katatui/src/nativeInterop/cinterop/katatui.h — rebuilt via `:katatui:buildKatatuiFfiHeader`; added `katatui_event_read_extended(uint64_t timeout_ms)` declaration
+2026-02-28T09:09-0800 katatui/src/nativeMain/kotlin/.../Event.kt — added import for `katatui_event_read_extended`; added `TerminalEvent` sealed interface (Tick/Key/Other); added `readEvent(timeoutMs: Long = 100L)` function mapping the u32 return to TerminalEvent
+2026-02-28T09:09-0800 sample-app/src/.../main.kt — replaced `poll` + `readKey` imports with `TerminalEvent` + `readEvent`; replaced tick-first loop with event-driven loop using `when (val ev = readEvent())`: Tick advances app state + manages image lifecycle, Key dispatches KeyPress, Other skips rendering; `shouldRender` boolean eliminates duplicate draw block; draw is called once with a fresh `appStore.state` snapshot
+
+## Decisions (session 23)
+
+2026-02-28T09:09-0800 poll(timeout)→Tick instead of push_event — the plan called for a Rust background thread injecting Resize(u16::MAX,u16::MAX) via `event::push_event`; `push_event` does not exist in crossterm 0.28 or 0.29 (confirmed by cargo build error and registry source search). The `event::poll(timeout_ms)` approach achieves identical semantics: the OS blocks the thread until a key arrives or the timeout elapses; zero CPU when idle; key presses return instantly; no background thread or synthetic event needed.
+2026-02-28T09:09-0800 No KatatuiTickSource struct — the plan's TickSource was only needed to own the background tick thread. With the poll-based approach there is no background thread; the tick interval is a parameter to `katatui_event_read_extended`. No new opaque C struct, no codegen-generated class.
+2026-02-28T09:09-0800 shouldRender boolean pattern — eliminates duplicate draw blocks (plan showed Tick and Key each with their own draw call). Using `when` as an expression returning Bool and a single `if (shouldRender) draw { … }` block keeps the render code in one place and avoids `continue` inside a `try` (which would incorrectly fire `finally`).
+2026-02-28T09:09-0800 Image lifecycle remains Tick-only — previousTab tracking and image free/null only runs in the Tick branch (mirrors original behaviour); key events dispatch + render without touching the lifecycle
+
+## Issues (session 23)
+
+**`event::push_event` not in crossterm 0.28/0.29:** Plan assumed `event::push_event` exists in crossterm 0.28. Cargo build failed with `E0425: cannot find function 'push_event' in module 'event'`. Confirmed absent in both 0.28.1 and 0.29.0 in the local registry. Resolved by using `event::poll(timeout)` returning 256 on timeout instead.
+
+## Commits
+
+HEAD — feat: event-driven render loop (blocking poll, immediate key feedback)

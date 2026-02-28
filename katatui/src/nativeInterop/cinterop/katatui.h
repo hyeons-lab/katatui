@@ -261,6 +261,15 @@ bool katatui_event_poll(uint64_t timeout_ms);
  */
 uint8_t katatui_event_read_key_code(void);
 
+/**
+ * Blocking event read with tick timeout. Blocks until either a terminal event arrives or
+ * `timeout_ms` milliseconds elapse. Returns:
+ *   256 = Tick (timeout elapsed — no event within the interval)
+ *   1–255 = key code (same mapping as katatui_event_read_key_code)
+ *   0 = other/unknown event (real resize, mouse, paste, etc.)
+ */
+uint32_t katatui_event_read_extended(uint64_t timeout_ms);
+
 struct KatatuiBarChart *katatui_bar_chart_new(void);
 
 void katatui_bar_chart_free(struct KatatuiBarChart *chart);
