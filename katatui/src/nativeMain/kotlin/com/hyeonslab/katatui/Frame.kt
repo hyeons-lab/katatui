@@ -122,7 +122,7 @@ fun Frame.tabs(area: Rect = size, init: Tabs.() -> Unit = {}) =
 fun Frame.table(area: Rect = size, state: TableState? = null, init: Table.() -> Unit = {}) =
   Table(init).use { render(it, it.area ?: area, state) }
 
-fun Frame.scrollbar(area: Rect = size, state: ScrollbarState, init: Scrollbar.() -> Unit = {}) =
+fun Frame.scrollbar(state: ScrollbarState, area: Rect = size, init: Scrollbar.() -> Unit = {}) =
   Scrollbar(init).use { render(it, it.area ?: area, state) }
 
 fun Frame.chart(area: Rect = size, init: Chart.() -> Unit = {}) =

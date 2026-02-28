@@ -104,9 +104,7 @@ typedef struct KatatuiMascot KatatuiMascot;
 typedef struct KatatuiParagraph KatatuiParagraph;
 
 /**
- * Symbols are stored as pre-leaked `&'static str` so `build_scrollbar` can be called
- * every frame without leaking additional memory.  The initial leak happens once in each
- * `set_*_symbol` call.
+ * Symbols are stored as owned `String`; drop is automatic when the struct is freed.
  */
 typedef struct KatatuiScrollbar KatatuiScrollbar;
 
@@ -301,7 +299,7 @@ void katatui_canvas_y_bounds(struct KatatuiCanvas *canvas, double min, double ma
 void katatui_canvas_set_marker(struct KatatuiCanvas *canvas, enum KatatuiMarker marker);
 
 /**
- * Clears all buffered drawing commands.
+ * Clears all buffered drawing commands and resets the current-points batch state.
  */
 void katatui_canvas_clear(struct KatatuiCanvas *canvas);
 
@@ -346,7 +344,7 @@ void katatui_canvas_begin_points(struct KatatuiCanvas *canvas, struct KatatuiSty
 void katatui_canvas_point(struct KatatuiCanvas *canvas, double x, double y);
 
 /**
- * Commits the current `Points` batch.
+ * Commits the current `Points` batch.  No-op if the batch is empty.
  */
 void katatui_canvas_commit_points(struct KatatuiCanvas *canvas);
 
@@ -370,9 +368,7 @@ void katatui_chart_set_dataset_style(struct KatatuiChart *chart, struct KatatuiS
 void katatui_chart_dataset_point(struct KatatuiChart *chart, double x, double y);
 
 /**
- * Commits the current dataset.  The data Vec is leaked once here to obtain a
- * `&'static [(f64, f64)]` so that `build_chart` can be called every frame without
- * additional allocations.
+ * Commits the current dataset into the chart's dataset list.
  */
 void katatui_chart_commit_dataset(struct KatatuiChart *chart);
 
@@ -499,10 +495,6 @@ void katatui_scrollbar_free(struct KatatuiScrollbar *sb);
 void katatui_scrollbar_set_orientation(struct KatatuiScrollbar *sb,
                                        enum KatatuiScrollbarOrientation orientation);
 
-/**
- * Leaks `sym` once per call; subsequent calls on the same Scrollbar abandon the previous
- * leaked string (negligible — typically called at app initialisation, not per frame).
- */
 void katatui_scrollbar_set_thumb_symbol(struct KatatuiScrollbar *sb, const char *sym);
 
 void katatui_scrollbar_set_track_symbol(struct KatatuiScrollbar *sb, const char *sym);

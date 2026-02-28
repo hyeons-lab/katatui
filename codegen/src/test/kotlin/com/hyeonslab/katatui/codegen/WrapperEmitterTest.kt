@@ -21,6 +21,12 @@ class WrapperEmitterTest {
     CFunction("void", "katatui_block_set_borders", listOf(self, CParam("borders", "uint32_t")))
   private val styleSetter =
     CFunction("void", "katatui_block_set_style", listOf(self, CParam("style", "KatatuiStyle")))
+  private val graphTypeSetter =
+    CFunction(
+      "void",
+      "katatui_block_set_graph_type",
+      listOf(self, CParam("graph_type", "KatatuiGraphType")),
+    )
 
   private fun withTempDir(block: (File) -> String): String {
     val dir = Files.createTempDirectory("katatui-test").toFile()
@@ -83,6 +89,16 @@ class WrapperEmitterTest {
       dir.resolve("com/hyeonslab/katatui/Block.kt").readText()
     }
     text shouldNotContain "var style"
+  }
+
+  @Test
+  fun `setter with complex Katatui enum param is excluded`() {
+    val group = WidgetGroup("KatatuiBlock", "Block", listOf(ctorFn, dtorFn, graphTypeSetter))
+    val text = withTempDir { dir ->
+      WrapperEmitter(dir).emit(listOf(group))
+      dir.resolve("com/hyeonslab/katatui/Block.kt").readText()
+    }
+    text shouldNotContain "var graphType"
   }
 
   @Test

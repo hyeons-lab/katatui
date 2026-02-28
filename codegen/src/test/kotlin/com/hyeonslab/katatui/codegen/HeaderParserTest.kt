@@ -30,6 +30,7 @@ class HeaderParserTest {
     |typedef struct KatatuiTerminal KatatuiTerminal;
     |typedef struct KatatuiFrame KatatuiFrame;
     |typedef struct KatatuiListState KatatuiListState;
+    |typedef struct KatatuiScrollbarState KatatuiScrollbarState;
     |
     |struct KatatuiBlock *katatui_block_new(void);
     |void katatui_block_free(struct KatatuiBlock *block);
@@ -43,6 +44,10 @@ class HeaderParserTest {
     |struct KatatuiFrame *katatui_frame_new(void);
     |struct KatatuiListState *katatui_list_state_new(void);
     |void katatui_list_state_free(struct KatatuiListState *s);
+    |struct KatatuiScrollbarState *katatui_scrollbar_state_new(void);
+    |void katatui_scrollbar_state_free(struct KatatuiScrollbarState *state);
+    |void katatui_scrollbar_state_set_content_length(struct KatatuiScrollbarState *state, uint16_t length);
+    |void katatui_scrollbar_state_set_position(struct KatatuiScrollbarState *state, uint16_t position);
     """
       .trimMargin()
       .lines()
@@ -156,5 +161,12 @@ class HeaderParserTest {
     constructor.role shouldBe FunctionRole.Constructor
     block.setters.size shouldBe 1
     block.setters[0].name shouldBe "katatui_block_set_title"
+  }
+
+  @Test
+  fun `widgetGroups excludes scrollbar_state`() {
+    val p = HeaderParser().apply { parse(sampleHeader) }
+    val names = p.widgetGroups().map { it.kotlinName }
+    names shouldNotContain "ScrollbarState"
   }
 }

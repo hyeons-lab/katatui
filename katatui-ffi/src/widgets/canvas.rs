@@ -76,7 +76,7 @@ pub extern "C" fn katatui_canvas_set_marker(canvas: *mut KatatuiCanvas, marker: 
     unsafe { (*canvas).marker = marker };
 }
 
-/// Clears all buffered drawing commands.
+/// Clears all buffered drawing commands and resets the current-points batch state.
 #[no_mangle]
 pub extern "C" fn katatui_canvas_clear(canvas: *mut KatatuiCanvas) {
     if canvas.is_null() {
@@ -85,6 +85,7 @@ pub extern "C" fn katatui_canvas_clear(canvas: *mut KatatuiCanvas) {
     let c = unsafe { &mut *canvas };
     c.commands.clear();
     c.current_points.clear();
+    c.current_points_color = ratatui::style::Color::Reset;
 }
 
 // ---- Draw commands ----
@@ -167,13 +168,16 @@ pub extern "C" fn katatui_canvas_point(canvas: *mut KatatuiCanvas, x: f64, y: f6
     unsafe { (*canvas).current_points.push((x, y)) };
 }
 
-/// Commits the current `Points` batch.
+/// Commits the current `Points` batch.  No-op if the batch is empty.
 #[no_mangle]
 pub extern "C" fn katatui_canvas_commit_points(canvas: *mut KatatuiCanvas) {
     if canvas.is_null() {
         return;
     }
     let c = unsafe { &mut *canvas };
+    if c.current_points.is_empty() {
+        return;
+    }
     let coords = std::mem::take(&mut c.current_points);
     c.commands.push(CanvasCmd::Points { coords, color: c.current_points_color });
 }

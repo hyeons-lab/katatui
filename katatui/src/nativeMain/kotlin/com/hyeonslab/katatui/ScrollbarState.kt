@@ -15,18 +15,21 @@ class ScrollbarState internal constructor(internal val ptr: CPointer<KatatuiScro
 
   var contentLength: Int = 0
     set(value) {
+      require(value in 0..65535) { "contentLength must be in 0..65535, got $value" }
       field = value
       katatui_scrollbar_state_set_content_length(ptr, value.toUShort())
     }
 
   var position: Int = 0
     set(value) {
+      require(value in 0..65535) { "position must be in 0..65535, got $value" }
       field = value
       katatui_scrollbar_state_set_position(ptr, value.toUShort())
     }
 
   var viewportContentLength: Int = 0
     set(value) {
+      require(value in 0..65535) { "viewportContentLength must be in 0..65535, got $value" }
       field = value
       katatui_scrollbar_state_set_viewport_content_length(ptr, value.toUShort())
     }

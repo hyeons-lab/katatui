@@ -4,8 +4,10 @@ import com.hyeonslab.katatui.Constraint
 import com.hyeonslab.katatui.Frame
 import com.hyeonslab.katatui.GraphType
 import com.hyeonslab.katatui.ImageState
+import com.hyeonslab.katatui.KEY_DOWN
 import com.hyeonslab.katatui.KEY_LEFT
 import com.hyeonslab.katatui.KEY_RIGHT
+import com.hyeonslab.katatui.KEY_UP
 import com.hyeonslab.katatui.Layout
 import com.hyeonslab.katatui.LogoSize
 import com.hyeonslab.katatui.Marker
@@ -146,6 +148,7 @@ fun main() {
 
     var activeTab = 0
     var tick = 0
+    var scrollOffset = 0
     val history = ArrayDeque<ULong>(40)
 
     while (true) {
@@ -177,7 +180,7 @@ fun main() {
           0 -> renderDashboard(content, history, cpuPct, memPct)
           1 -> renderChart(content, tick)
           2 -> renderCanvas(content, tick)
-          3 -> renderScrollbar(content, scrollbarState, tick)
+          3 -> renderScrollbar(content, scrollbarState, scrollOffset)
           4 -> renderBranding(content, tick)
           5 -> renderWidgetTable(content)
           6 -> renderImageTab(content, imageState)
@@ -196,6 +199,10 @@ fun main() {
           '7' -> activeTab = 6
           KEY_LEFT -> if (activeTab > 0) activeTab--
           KEY_RIGHT -> if (activeTab < TAB_NAMES.lastIndex) activeTab++
+          KEY_UP -> if (activeTab == 3 && scrollOffset > 0) scrollOffset--
+          KEY_DOWN ->
+            if (activeTab == 3)
+              scrollOffset = (scrollOffset + 1).coerceAtMost(SCROLL_LINES.size - 1)
         }
       }
     }
@@ -271,7 +278,7 @@ private fun Frame.renderDashboard(
 
   // Help text
   paragraph {
-    text = "◄ ►  or  1–7 : switch tabs     q : quit"
+    text = "◄ ►  or  1–7 : switch tabs     ↑/↓ : scroll (Scrollbar tab)     q : quit"
     this.area = helpArea
   }
 }
@@ -314,29 +321,27 @@ private fun Frame.renderCanvas(area: Rect, tick: Int) {
     setMarker(Marker.Braille)
     // Pulsing circle
     val r = 15.0 + 10.0 * sin(tick * 0.1)
-    circle(50.0, 50.0, r, Style(fg = Color.Cyan))
+    circle(50.0, 50.0, r, Color.Cyan)
     // 4 rotating spokes
     for (k in 0..3) {
       val angle = tick * 0.05 + k * PI / 2.0
-      line(50.0, 50.0, 50.0 + 40.0 * cos(angle), 50.0 + 40.0 * sin(angle), Style(fg = Color.Green))
+      line(50.0, 50.0, 50.0 + 40.0 * cos(angle), 50.0 + 40.0 * sin(angle), Color.Green)
     }
     // Corner rectangles
     listOf(2.0 to 2.0, 83.0 to 2.0, 2.0 to 88.0, 83.0 to 88.0).forEach { (x, y) ->
-      rectangle(x, y, 15.0, 10.0, Style(fg = Color.Yellow))
+      rectangle(x, y, 15.0, 10.0, Color.Yellow)
     }
   }
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun Frame.renderScrollbar(area: Rect, scrollbarState: ScrollbarState, tick: Int) {
+private fun Frame.renderScrollbar(area: Rect, scrollbarState: ScrollbarState, offset: Int) {
   block(area) {
     title = "Scrollbar"
     borders = Borders.all.bits
   }
   val inner = area.inner()
   val viewportLines = inner.height.toInt()
-  val maxScroll = (SCROLL_LINES.size - viewportLines).coerceAtLeast(0)
-  val offset = if (maxScroll > 0) (tick / 5) % (maxScroll + 1) else 0
 
   scrollbarState.contentLength = SCROLL_LINES.size
   scrollbarState.viewportContentLength = viewportLines
@@ -347,7 +352,7 @@ private fun Frame.renderScrollbar(area: Rect, scrollbarState: ScrollbarState, ti
     this.area = inner
   }
   // Render scrollbar overlaid on the border (right edge of area)
-  scrollbar(area, scrollbarState) { setOrientation(ScrollbarOrientation.VerticalRight) }
+  scrollbar(scrollbarState, area) { setOrientation(ScrollbarOrientation.VerticalRight) }
 }
 
 @OptIn(ExperimentalForeignApi::class)

@@ -334,6 +334,39 @@ HEAD — fix: always link katatui Rust FFI release lib regardless of Kotlin bina
 
 **`./gradlew build` failed — `ld: library 'katatui_ffi' not found` on macosX64:** The `katatui/build.gradle.kts` `binaries.all` block used `if (optimized) "release" else "debug"` to select the Rust library path. Test binaries are non-optimized, so they looked for the `debug` build. The cargo task only builds `--release`. For `macosArm64` this was masked because `buildKatatuiFfiHeader` incidentally produced a debug arm64 lib. For `macosX64` no debug lib was ever created. Fixed by always linking against `release` — the Rust optimization level is independent of the Kotlin binary type.
 
+## What Changed (session 14 — PR review fixes)
+
+2026-02-27T18:41-0800 katatui-ffi/src/widgets/chart.rs — KatatuiDataset.data changed from &'static [(f64,f64)] to Vec<(f64,f64)> (owned); removed Box::leak from commit_dataset; commit_dataset now uses std::mem::take directly; added uncommitted-data warning in katatui_chart_free; removed build_chart (no longer viable with &'a slice API); added #[derive(Clone)] to KatatuiDataset and AxisBuilder; made x_axis/y_axis pub(crate) and AxisBuilder fields pub(crate)
+2026-02-27T18:41-0800 katatui-ffi/src/widgets/scrollbar.rs — changed four symbol fields from Option<&'static str> to Option<String>; set_*_symbol now assigns owned String directly (no Box::leak); removed build_scrollbar (replaced by inline build in lib.rs); made symbol fields pub(crate)
+2026-02-27T18:41-0800 katatui-ffi/src/widgets/canvas.rs — katatui_canvas_clear now resets current_points_color to Color::Reset; katatui_canvas_commit_points guards against empty batch (early return)
+2026-02-27T18:41-0800 katatui-ffi/src/lib.rs — removed build_scrollbar import; katatui_frame_render_scrollbar now clones all symbol/style fields into locals and builds Scrollbar<'_> inside the closure using as_deref(); removed build_chart import, replaced with build_axis; katatui_frame_render_chart now clones datasets/axes/style into closure and builds Chart<'_> inline (Dataset::data takes &'a [(f64,f64)] not Cow)
+2026-02-27T18:41-0800 katatui/src/nativeMain/kotlin/.../ScrollbarState.kt — added require(value in 0..65535) to all three property setters
+2026-02-27T18:41-0800 katatui/src/nativeMain/kotlin/.../CanvasExt.kt — circle/line/rectangle/beginPoints param changed from Style to Color; internally wraps Style(fg = color).toCValue(); added Canvas.clear() extension calling katatui_canvas_clear
+2026-02-27T18:41-0800 katatui/src/nativeMain/kotlin/.../Frame.kt — scrollbar() params reordered: state first, area second (consistent with list())
+2026-02-27T18:41-0800 katatui/build.gradle.kts — added comment to linkerOpts explaining always-release linking
+2026-02-27T18:41-0800 sample-app/src/.../main.kt — canvas call sites changed from Style(fg = Color.X) to Color.X; scrollbar() call updated to new param order; auto-scroll replaced with manual ↑/↓ (scrollOffset var); KEY_UP/KEY_DOWN imports added; help text updated with ↑/↓ hint
+2026-02-27T18:41-0800 katatui/src/nativeTest/.../ScrollbarStateTest.kt — new; 12 tests (valid/upper-bound/negative/65536) × 3 properties
+2026-02-27T18:41-0800 codegen/src/test/.../HeaderParserTest.kt — added KatatuiScrollbarState typedef + state fns to sampleHeader; added `widgetGroups excludes scrollbar_state` test
+2026-02-27T18:41-0800 codegen/src/test/.../WrapperEmitterTest.kt — added graphTypeSetter CFunction (KatatuiGraphType param); added `setter with complex Katatui enum param is excluded` test
+
+## Decisions (session 14)
+
+2026-02-27T18:41-0800 Build chart inside closure — Dataset::data takes &'a [(f64,f64)] not Into<Cow>; build_chart returning Chart<'static> was incompatible with owned Vec data; cloning datasets into closure and building Chart<'_> locally (same as canvas pattern) is correct
+2026-02-27T18:41-0800 Scrollbar built inline with Scrollbar<'_> — Scrollbar::new returns Scrollbar<'static>; after applying &str symbols from owned Strings, the type becomes Scrollbar<'closer>; using explicit `let mut widget: Scrollbar<'_>` + as_deref() resolves the type inference issue
+2026-02-27T18:41-0800 pub(crate) for axis/symbol fields — lib.rs is in the same crate as the widget modules; pub(crate) gives the render functions access to clone fields without exposing them in the C API
+
+## Issues (session 14)
+
+**Dataset::data takes &'a not Cow:** Plan claimed ratatui 0.30's Dataset::data accepted Into<Cow>; actual signature is const fn data(self, data: &'a [(f64,f64)]) -> Self. Resolved by restructuring render to build Chart inside the closure.
+**Scrollbar type inference with as_str():** Calling widget.thumb_symbol(sym.as_str()) caused E0282 ("cannot infer type"); root cause is lifetime narrowing from Scrollbar<'static> to Scrollbar<'shorter>. Fixed with as_deref() on Option<String> and explicit Scrollbar<'_> annotation.
+**Private symbol fields in scrollbar.rs:** lib.rs (same crate) needs access to symbol fields for cloning; fixed by changing private to pub(crate).
+
+## Commits
+
+4342e07 — feat: expand sample app to showcase all 15 widgets across 7 tabs
+27675bf — fix: always link katatui Rust FFI release lib regardless of Kotlin binary type
+HEAD — fix: address all PR review issues
+
 ## Next Steps
 
 - Push and update PR #1

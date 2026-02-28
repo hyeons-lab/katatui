@@ -19,22 +19,23 @@ impl From<KatatuiGraphType> for ratatui::widgets::GraphType {
     }
 }
 
-/// A committed dataset with its data slice already leaked to `'static`.
+/// A committed dataset with its data points owned by this struct.
+#[derive(Clone)]
 pub struct KatatuiDataset {
     pub name: String,
-    /// Leaked once in `katatui_chart_commit_dataset`; reused every frame at no extra cost.
-    pub data: &'static [(f64, f64)],
+    pub data: Vec<(f64, f64)>,
     pub graph_type: KatatuiGraphType,
     pub marker: KatatuiMarker,
     pub style: Option<KatatuiStyle>,
 }
 
-struct AxisBuilder {
-    title: Option<String>,
-    bounds_min: f64,
-    bounds_max: f64,
-    labels: Vec<String>,
-    style: Option<KatatuiStyle>,
+#[derive(Clone)]
+pub(crate) struct AxisBuilder {
+    pub(crate) title: Option<String>,
+    pub(crate) bounds_min: f64,
+    pub(crate) bounds_max: f64,
+    pub(crate) labels: Vec<String>,
+    pub(crate) style: Option<KatatuiStyle>,
 }
 
 impl Default for AxisBuilder {
@@ -51,41 +52,12 @@ pub struct KatatuiChart {
     current_graph_type: KatatuiGraphType,
     current_marker: KatatuiMarker,
     current_style: Option<KatatuiStyle>,
-    x_axis: AxisBuilder,
-    y_axis: AxisBuilder,
+    pub(crate) x_axis: AxisBuilder,
+    pub(crate) y_axis: AxisBuilder,
     pub style: Option<KatatuiStyle>,
 }
 
-pub fn build_chart(c: &KatatuiChart) -> ratatui::widgets::Chart<'static> {
-    use ratatui::widgets::{Chart, Dataset};
-
-    let datasets: Vec<Dataset<'static>> = c
-        .datasets
-        .iter()
-        .map(|d| {
-            let mut ds = Dataset::default()
-                .name(d.name.clone())
-                .data(d.data)
-                .marker(d.marker.into())
-                .graph_type(d.graph_type.into());
-            if let Some(style) = d.style {
-                ds = ds.style(ratatui::style::Style::from(style));
-            }
-            ds
-        })
-        .collect();
-
-    let x_axis = build_axis(&c.x_axis);
-    let y_axis = build_axis(&c.y_axis);
-
-    let mut chart = Chart::new(datasets).x_axis(x_axis).y_axis(y_axis);
-    if let Some(s) = c.style {
-        chart = chart.style(ratatui::style::Style::from(s));
-    }
-    chart
-}
-
-fn build_axis(a: &AxisBuilder) -> ratatui::widgets::Axis<'static> {
+pub(crate) fn build_axis(a: &AxisBuilder) -> ratatui::widgets::Axis<'static> {
     use ratatui::widgets::Axis;
     let mut axis = Axis::default().bounds([a.bounds_min, a.bounds_max]);
     if let Some(ref title) = a.title {
@@ -120,6 +92,13 @@ pub extern "C" fn katatui_chart_new() -> *mut KatatuiChart {
 #[no_mangle]
 pub extern "C" fn katatui_chart_free(chart: *mut KatatuiChart) {
     if !chart.is_null() {
+        let c = unsafe { &*chart };
+        if !c.current_data.is_empty() {
+            eprintln!(
+                "[katatui] Chart freed with {} uncommitted data points; call commitDataset() first",
+                c.current_data.len()
+            );
+        }
         unsafe { drop(Box::from_raw(chart)) };
     }
 }
@@ -181,20 +160,16 @@ pub extern "C" fn katatui_chart_dataset_point(chart: *mut KatatuiChart, x: f64, 
     unsafe { (*chart).current_data.push((x, y)) };
 }
 
-/// Commits the current dataset.  The data Vec is leaked once here to obtain a
-/// `&'static [(f64, f64)]` so that `build_chart` can be called every frame without
-/// additional allocations.
+/// Commits the current dataset into the chart's dataset list.
 #[no_mangle]
 pub extern "C" fn katatui_chart_commit_dataset(chart: *mut KatatuiChart) {
     if chart.is_null() {
         return;
     }
     let c = unsafe { &mut *chart };
-    let data: Vec<(f64, f64)> = std::mem::take(&mut c.current_data);
-    let data_static: &'static [(f64, f64)] = Box::leak(data.into_boxed_slice());
     c.datasets.push(KatatuiDataset {
         name: std::mem::take(&mut c.current_name),
-        data: data_static,
+        data: std::mem::take(&mut c.current_data),
         graph_type: c.current_graph_type,
         marker: c.current_marker,
         style: c.current_style.take(),

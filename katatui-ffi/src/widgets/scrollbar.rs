@@ -22,15 +22,13 @@ impl From<KatatuiScrollbarOrientation> for ratatui::widgets::ScrollbarOrientatio
     }
 }
 
-/// Symbols are stored as pre-leaked `&'static str` so `build_scrollbar` can be called
-/// every frame without leaking additional memory.  The initial leak happens once in each
-/// `set_*_symbol` call.
+/// Symbols are stored as owned `String`; drop is automatic when the struct is freed.
 pub struct KatatuiScrollbar {
     pub orientation: KatatuiScrollbarOrientation,
-    thumb_symbol: Option<&'static str>,
-    track_symbol: Option<&'static str>,
-    begin_symbol: Option<&'static str>,
-    end_symbol: Option<&'static str>,
+    pub(crate) thumb_symbol: Option<String>,
+    pub(crate) track_symbol: Option<String>,
+    pub(crate) begin_symbol: Option<String>,
+    pub(crate) end_symbol: Option<String>,
     pub thumb_style: Option<KatatuiStyle>,
     pub track_style: Option<KatatuiStyle>,
     pub begin_style: Option<KatatuiStyle>,
@@ -41,35 +39,6 @@ pub struct KatatuiScrollbarState {
     pub(crate) inner: ratatui::widgets::ScrollbarState,
 }
 
-pub fn build_scrollbar(s: &KatatuiScrollbar) -> ratatui::widgets::Scrollbar<'static> {
-    use ratatui::widgets::Scrollbar;
-    let mut sb = Scrollbar::new(s.orientation.into());
-    if let Some(sym) = s.thumb_symbol {
-        sb = sb.thumb_symbol(sym);
-    }
-    if let Some(sym) = s.track_symbol {
-        sb = sb.track_symbol(Some(sym));
-    }
-    if let Some(sym) = s.begin_symbol {
-        sb = sb.begin_symbol(Some(sym));
-    }
-    if let Some(sym) = s.end_symbol {
-        sb = sb.end_symbol(Some(sym));
-    }
-    if let Some(style) = s.thumb_style {
-        sb = sb.thumb_style(ratatui::style::Style::from(style));
-    }
-    if let Some(style) = s.track_style {
-        sb = sb.track_style(ratatui::style::Style::from(style));
-    }
-    if let Some(style) = s.begin_style {
-        sb = sb.begin_style(ratatui::style::Style::from(style));
-    }
-    if let Some(style) = s.end_style {
-        sb = sb.end_style(ratatui::style::Style::from(style));
-    }
-    sb
-}
 
 #[no_mangle]
 pub extern "C" fn katatui_scrollbar_new() -> *mut KatatuiScrollbar {
@@ -104,8 +73,6 @@ pub extern "C" fn katatui_scrollbar_set_orientation(
     unsafe { (*sb).orientation = orientation };
 }
 
-/// Leaks `sym` once per call; subsequent calls on the same Scrollbar abandon the previous
-/// leaked string (negligible — typically called at app initialisation, not per frame).
 #[no_mangle]
 pub extern "C" fn katatui_scrollbar_set_thumb_symbol(
     sb: *mut KatatuiScrollbar,
@@ -118,8 +85,7 @@ pub extern "C" fn katatui_scrollbar_set_thumb_symbol(
     if sym.is_null() {
         s.thumb_symbol = None;
     } else {
-        let owned = unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned();
-        s.thumb_symbol = Some(Box::leak(owned.into_boxed_str()));
+        s.thumb_symbol = Some(unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned());
     }
 }
 
@@ -135,8 +101,7 @@ pub extern "C" fn katatui_scrollbar_set_track_symbol(
     if sym.is_null() {
         s.track_symbol = None;
     } else {
-        let owned = unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned();
-        s.track_symbol = Some(Box::leak(owned.into_boxed_str()));
+        s.track_symbol = Some(unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned());
     }
 }
 
@@ -152,8 +117,7 @@ pub extern "C" fn katatui_scrollbar_set_begin_symbol(
     if sym.is_null() {
         s.begin_symbol = None;
     } else {
-        let owned = unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned();
-        s.begin_symbol = Some(Box::leak(owned.into_boxed_str()));
+        s.begin_symbol = Some(unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned());
     }
 }
 
@@ -169,8 +133,7 @@ pub extern "C" fn katatui_scrollbar_set_end_symbol(
     if sym.is_null() {
         s.end_symbol = None;
     } else {
-        let owned = unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned();
-        s.end_symbol = Some(Box::leak(owned.into_boxed_str()));
+        s.end_symbol = Some(unsafe { CStr::from_ptr(sym) }.to_string_lossy().into_owned());
     }
 }
 

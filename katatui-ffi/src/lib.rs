@@ -8,14 +8,13 @@ use types::KatatuiRect;
 use widgets::{
     bar_chart::build_bar_chart,
     block::build_block,
-    chart::build_chart,
+    chart::build_axis,
     clear::build_clear,
     gauge::build_gauge,
     line_gauge::build_line_gauge,
     list::build_list,
     logo::{build_logo, build_mascot},
     paragraph::build_paragraph,
-    scrollbar::build_scrollbar,
     sparkline::build_sparkline,
     table::build_table,
     tabs::build_tabs,
@@ -318,10 +317,50 @@ pub extern "C" fn katatui_frame_render_scrollbar(
     if frame.is_null() || sb.is_null() || state.is_null() {
         return;
     }
-    let widget = build_scrollbar(unsafe { &*sb });
+    // Clone all scrollbar fields into locals so the closure can be 'static.
+    let s = unsafe { &*sb };
+    let orientation = s.orientation;
+    let thumb_sym = s.thumb_symbol.clone();
+    let track_sym = s.track_symbol.clone();
+    let begin_sym = s.begin_symbol.clone();
+    let end_sym = s.end_symbol.clone();
+    let thumb_style = s.thumb_style;
+    let track_style = s.track_style;
+    let begin_style = s.begin_style;
+    let end_style = s.end_style;
     let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
-        let s = unsafe { &mut *state };
-        rf.render_stateful_widget(widget, area.into(), &mut s.inner);
+        use ratatui::widgets::Scrollbar;
+        // Borrow &str from the owned Strings within the closure scope.
+        let thumb_s = thumb_sym.as_deref();
+        let track_s = track_sym.as_deref();
+        let begin_s = begin_sym.as_deref();
+        let end_s = end_sym.as_deref();
+        let mut widget: Scrollbar<'_> = Scrollbar::new(orientation.into());
+        if let Some(s) = thumb_s {
+            widget = widget.thumb_symbol(s);
+        }
+        if let Some(s) = track_s {
+            widget = widget.track_symbol(Some(s));
+        }
+        if let Some(s) = begin_s {
+            widget = widget.begin_symbol(Some(s));
+        }
+        if let Some(s) = end_s {
+            widget = widget.end_symbol(Some(s));
+        }
+        if let Some(style) = thumb_style {
+            widget = widget.thumb_style(ratatui::style::Style::from(style));
+        }
+        if let Some(style) = track_style {
+            widget = widget.track_style(ratatui::style::Style::from(style));
+        }
+        if let Some(style) = begin_style {
+            widget = widget.begin_style(ratatui::style::Style::from(style));
+        }
+        if let Some(style) = end_style {
+            widget = widget.end_style(ratatui::style::Style::from(style));
+        }
+        rf.render_stateful_widget(widget, area.into(), &mut unsafe { &mut *state }.inner);
     });
     unsafe { (*frame).ops.push(op) };
 }
@@ -335,9 +374,36 @@ pub extern "C" fn katatui_frame_render_chart(
     if frame.is_null() || chart.is_null() {
         return;
     }
-    let widget = build_chart(unsafe { &*chart });
-    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
-        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    // Clone all chart data into owned structures so the closure is 'static.
+    let c = unsafe { &*chart };
+    let datasets = c.datasets.clone();
+    let x_axis_data = c.x_axis.clone();
+    let y_axis_data = c.y_axis.clone();
+    let chart_style = c.style;
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        use ratatui::widgets::{Chart, Dataset};
+        let ds_built: Vec<Dataset<'_>> = datasets
+            .iter()
+            .map(|d| {
+                let mut ds = Dataset::default()
+                    .name(d.name.clone())
+                    .data(d.data.as_slice())
+                    .marker(d.marker.into())
+                    .graph_type(d.graph_type.into());
+                if let Some(style) = d.style {
+                    ds = ds.style(ratatui::style::Style::from(style));
+                }
+                ds
+            })
+            .collect();
+        let x_axis = build_axis(&x_axis_data);
+        let y_axis = build_axis(&y_axis_data);
+        let mut widget = Chart::new(ds_built).x_axis(x_axis).y_axis(y_axis);
+        if let Some(s) = chart_style {
+            widget = widget.style(ratatui::style::Style::from(s));
+        }
+        rf.render_widget(widget, area.into());
+    });
     unsafe { (*frame).ops.push(op) };
 }
 
