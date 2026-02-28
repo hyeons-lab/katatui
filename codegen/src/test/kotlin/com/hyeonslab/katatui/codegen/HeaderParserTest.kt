@@ -4,7 +4,6 @@ import com.hyeonslab.katatui.codegen.model.FunctionRole
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import kotlin.test.Test
 
 class HeaderParserTest {
@@ -153,8 +152,8 @@ class HeaderParserTest {
   fun `widgetGroups assigns constructor and setter roles correctly`() {
     val p = HeaderParser().apply { parse(sampleHeader) }
     val block = checkNotNull(p.widgetGroups().find { it.kotlinName == "Block" })
-    block.constructor shouldNotBe null
-    block.constructor!!.role shouldBe FunctionRole.Constructor
+    val constructor = checkNotNull(block.constructor)
+    constructor.role shouldBe FunctionRole.Constructor
     block.setters.size shouldBe 1
     block.setters[0].name shouldBe "katatui_block_set_title"
   }
