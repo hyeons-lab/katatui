@@ -503,7 +503,8 @@ pub extern "C" fn katatui_frame_render_mascot(
 /// Blocking event read with tick timeout. Blocks until either a terminal event arrives or
 /// `timeout_ms` milliseconds elapse. Returns:
 ///   256 = Tick (timeout elapsed — no event within the interval)
-///   1–255 = key code (same mapping as katatui_event_read_key_code)
+///   1–255 = key code (ASCII char value; special keys: Backspace=0x08, Tab=0x09,
+///           Enter=0x0D, Esc=0x1B, Up=0xF1, Down=0xF2, Left=0xF3, Right=0xF4)
 ///   0 = other/unknown event (real resize, mouse, paste, etc.)
 #[no_mangle]
 pub extern "C" fn katatui_event_read_extended(timeout_ms: u64) -> u32 {

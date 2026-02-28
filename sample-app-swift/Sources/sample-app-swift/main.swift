@@ -4,10 +4,19 @@ Katatui.terminal { t in
     var tick: Int32 = 0
 
     mainLoop: while true {
+        var shouldRender = false
         switch Event.readEvent() {
         case .tick:
             tick = (tick + 1) % 100
+            shouldRender = true
+        case .key(let key):
+            if key?.character == "q" { break mainLoop }
+            shouldRender = true
+        case .other:
+            break
+        }
 
+        if shouldRender {
             t.draw { frame in
                 let areas = Layout.shared.vertical([
                     Constraint.length(3),
@@ -33,10 +42,6 @@ Katatui.terminal { t in
                     g.percent = UInt8(tick)
                 }
             }
-        case .key(let key):
-            if key?.character == "q" { break mainLoop }
-        case .other:
-            break
         }
     }
 }

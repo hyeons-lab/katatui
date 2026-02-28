@@ -522,4 +522,17 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 
 ## Commits
 
-HEAD — refactor: remove deprecated poll/readKey API, migrate Swift sample to readEvent
+379d53e — refactor: remove deprecated poll/readKey API, migrate Swift sample to readEvent
+
+## What Changed (session 25 — review fixes)
+
+2026-02-28T12:15-0800 katatui-ffi/src/lib.rs — fixed stale doc comment on `katatui_event_read_extended`: replaced "same mapping as katatui_event_read_key_code" (deleted function) with inline key-code table
+2026-02-28T12:15-0800 sample-app-swift/Sources/.../main.swift — aligned Swift event loop with Kotlin pattern: extracted `shouldRender` bool; `.tick` and `.key` both set it true; draw block moved outside switch; previously `.key` never triggered a redraw
+
+## Decisions (session 25)
+
+2026-02-28T12:15-0800 shouldRender pattern in Swift — mirrors Kotlin's `when (ev) { Tick -> …; Key -> …; Other -> false }` exactly; draw block is in one place; `break mainLoop` inside `.key` still works because Swift `break <label>` targets the named while loop, not the switch
+
+## Commits
+
+HEAD — fix: stale doc comment and missing key-event redraw in Swift sample
