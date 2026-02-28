@@ -310,12 +310,24 @@ HEAD — chore: update devlog
 **shouldBeNull/shouldNotBeNull unresolved:** `import io.kotest.matchers.shouldBeNull` was unresolved in kotest 6.1.3. Fixed by using `shouldBe(null)` / `shouldNotBe(null)` instead, which requires only the existing `shouldBe` import.
 **shouldNotBeNull() type inference failure:** Calling `.shouldNotBeNull()` on a chained `List.find()` result caused "Cannot infer type for type parameter 'V'" errors on subsequent uses of the returned value. Replaced with `checkNotNull()` which the compiler always handles correctly.
 
+## What Changed (session 13)
+
+2026-02-27T17:06-0800 sample-app/src/nativeMain/kotlin/.../main.kt — expanded sample app from 3 to 7 tabs (Dashboard, Chart, Canvas, Scrollbar, Branding, Widgets, Image); added renderChart/renderCanvas/renderScrollbar/renderBranding render functions; SCROLL_LINES constant; ScrollbarState lifecycle in main(); WIDGET_ROWS expanded to 15 rows; key bindings 1-7 and updated coerceAtMost for ◄/►
+2026-02-27T17:06-0800 devlog/plans/000001-03-expand-sample-app.md — plan file for this session
+
+## Decisions (session 13)
+
+2026-02-27T17:06-0800 One tab per new widget — Chart, Canvas, Scrollbar each get their own tab to clearly isolate the widget demo; Logo and Mascot share a Branding tab since they're thematically paired
+2026-02-27T17:06-0800 tick-driven animation, no extra state — Chart/Canvas/Scrollbar all derive their animated values from the existing `tick` counter; only ScrollbarState requires a new object (it holds C-side cursor state that must persist across frames)
+
 ## Commits
 
 3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
 0f0440b — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
 ac16d1b — refactor: consolidate Marker enums and fix review issues
-HEAD — test: migrate all assertions to kotest
+bf11cb1 — test: remove redundant null assertion and unused import in HeaderParserTest
+7dbdbcc136796620c8171c69be657be8ceaaab0b — test: migrate all assertions to kotest
+HEAD — feat: expand sample app to showcase all 15 widgets across 7 tabs
 
 ## Next Steps
 
