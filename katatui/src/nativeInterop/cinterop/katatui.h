@@ -252,15 +252,6 @@ void katatui_frame_render_mascot(struct KatatuiFrame *frame,
                                  struct KatatuiRect area,
                                  const struct KatatuiMascot *mascot);
 
-bool katatui_event_poll(uint64_t timeout_ms);
-
-/**
- * Returns the ASCII value of a key press, or a sentinel value for special keys.
- * Special keys: Up=0xF1, Down=0xF2, Left=0xF3, Right=0xF4, Enter=0x0D, Esc=0x1B
- * Returns 0 for non-key events or unrecognised keys.
- */
-uint8_t katatui_event_read_key_code(void);
-
 /**
  * Blocking event read with tick timeout. Blocks until either a terminal event arrives or
  * `timeout_ms` milliseconds elapse. Returns:

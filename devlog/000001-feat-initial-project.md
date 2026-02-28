@@ -505,4 +505,21 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 
 ## Commits
 
-HEAD — feat: event-driven render loop (blocking poll, immediate key feedback)
+3d7dd0d — feat: event-driven render loop (blocking poll, immediate key feedback)
+
+## What Changed (session 24 — remove polling event API)
+
+2026-02-28T10:17-0800 katatui-ffi/src/lib.rs — deleted `katatui_event_poll` and `katatui_event_read_key_code` functions; both are dead code now that the event-driven `katatui_event_read_extended` path is the only consumer; `use std::time::Duration` and `use crossterm::event::KeyEventKind` kept (still used by `katatui_event_read_extended`)
+2026-02-28T10:17-0800 katatui/src/nativeInterop/cinterop/katatui.h — rebuilt via `:katatui:buildKatatuiFfiHeader`; declarations for `katatui_event_poll` and `katatui_event_read_key_code` removed
+2026-02-28T10:17-0800 katatui/src/nativeMain/kotlin/.../Event.kt — removed imports for `katatui_event_poll`, `katatui_event_read_key_code`, `kotlin.time.Duration`, `kotlin.time.Duration.Companion.milliseconds`; removed `poll()`, `pollMillis()`, `readKey()` functions; kept `KEY_*` constants, `TerminalEvent`, and `readEvent()`
+2026-02-28T10:17-0800 sample-app-swift/Sources/.../DSL.swift — replaced `Event.poll(timeoutMillis:)` + `Event.readKey()` with single `Event.readEvent(timeoutMs:)` delegating to `EventKt.readEvent`
+2026-02-28T10:17-0800 sample-app-swift/Sources/.../main.swift — replaced `while true { tick++; draw; if poll { if readKey == "q" break } }` with `mainLoop: while true { switch Event.readEvent() { case .tick: tick++; draw; case .key: if key?.character == "q" break mainLoop; case .other: break } }`
+
+## Decisions (session 24)
+
+2026-02-28T10:17-0800 Remove poll/readKey, keep KEY_* constants — `poll` and `readKey` are dead code (Kotlin sample already uses `readEvent`; Swift sample was the only remaining caller). KEY_* constants are still imported in `App.kt` and are part of the public API for key comparison, so they stay.
+2026-02-28T10:17-0800 Swift switch on TerminalEvent — mirrors the Kotlin sample's `when (readEvent())` pattern; SKIE bridges Kotlin sealed interface → Swift enum automatically; `key?.character` extracts Swift `Character` from the SKIE-bridged `KotlinChar?`
+
+## Commits
+
+HEAD — refactor: remove deprecated poll/readKey API, migrate Swift sample to readEvent

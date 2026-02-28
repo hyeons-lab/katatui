@@ -63,11 +63,7 @@ extension Frame {
 // --- Event DSL ---
 
 public enum Event {
-    public static func poll(timeoutMillis: Int64 = 100) -> Bool {
-        return EventKt.pollMillis(timeoutMillis: timeoutMillis)
-    }
-
-    public static func readKey() -> Character? {
-        return EventKt.readKey()
+    public static func readEvent(timeoutMs: Int64 = 100) -> TerminalEvent {
+        return EventKt.readEvent(timeoutMs: timeoutMs)
     }
 }

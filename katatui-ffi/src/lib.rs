@@ -500,36 +500,6 @@ pub extern "C" fn katatui_frame_render_mascot(
 
 // ---- Events ----
 
-#[no_mangle]
-pub extern "C" fn katatui_event_poll(timeout_ms: u64) -> bool {
-    event::poll(std::time::Duration::from_millis(timeout_ms)).unwrap_or(false)
-}
-
-/// Returns the ASCII value of a key press, or a sentinel value for special keys.
-/// Special keys: Up=0xF1, Down=0xF2, Left=0xF3, Right=0xF4, Enter=0x0D, Esc=0x1B
-/// Returns 0 for non-key events or unrecognised keys.
-#[no_mangle]
-pub extern "C" fn katatui_event_read_key_code() -> u8 {
-    match event::read() {
-        Ok(Event::Key(key_event)) if key_event.kind == KeyEventKind::Press => {
-            use crossterm::event::KeyCode;
-            match key_event.code {
-                KeyCode::Char(c) if (c as u32) < 128 => c as u8,
-                KeyCode::Backspace => 0x08,
-                KeyCode::Tab => 0x09,
-                KeyCode::Enter => b'\r',
-                KeyCode::Esc => 0x1B,
-                KeyCode::Up => 0xF1,
-                KeyCode::Down => 0xF2,
-                KeyCode::Left => 0xF3,
-                KeyCode::Right => 0xF4,
-                _ => 0,
-            }
-        }
-        _ => 0,
-    }
-}
-
 /// Blocking event read with tick timeout. Blocks until either a terminal event arrives or
 /// `timeout_ms` milliseconds elapse. Returns:
 ///   256 = Tick (timeout elapsed — no event within the interval)
