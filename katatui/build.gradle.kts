@@ -117,8 +117,7 @@ kotlin {
       }
     }
     binaries.all {
-      val buildType = if (optimized) "release" else "debug"
-      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/$buildType", "-lkatatui_ffi")
+      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/release", "-lkatatui_ffi")
       if (name.contains("mingw", ignoreCase = true)) {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }

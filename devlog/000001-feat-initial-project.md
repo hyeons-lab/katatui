@@ -326,8 +326,13 @@ HEAD — chore: update devlog
 0f0440b — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
 ac16d1b — refactor: consolidate Marker enums and fix review issues
 bf11cb1 — test: remove redundant null assertion and unused import in HeaderParserTest
-7dbdbcc136796620c8171c69be657be8ceaaab0b — test: migrate all assertions to kotest
-HEAD — feat: expand sample app to showcase all 15 widgets across 7 tabs
+7dbdbcc — test: migrate all assertions to kotest
+4342e07 — feat: expand sample app to showcase all 15 widgets across 7 tabs
+HEAD — fix: always link katatui Rust FFI release lib regardless of Kotlin binary type
+
+## Issues (session 13 cont.)
+
+**`./gradlew build` failed — `ld: library 'katatui_ffi' not found` on macosX64:** The `katatui/build.gradle.kts` `binaries.all` block used `if (optimized) "release" else "debug"` to select the Rust library path. Test binaries are non-optimized, so they looked for the `debug` build. The cargo task only builds `--release`. For `macosArm64` this was masked because `buildKatatuiFfiHeader` incidentally produced a debug arm64 lib. For `macosX64` no debug lib was ever created. Fixed by always linking against `release` — the Rust optimization level is independent of the Kotlin binary type.
 
 ## Next Steps
 
