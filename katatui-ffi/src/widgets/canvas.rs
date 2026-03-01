@@ -42,6 +42,8 @@ pub extern "C" fn katatui_canvas_new() -> *mut KatatuiCanvas {
 #[no_mangle]
 pub extern "C" fn katatui_canvas_free(canvas: *mut KatatuiCanvas) {
     if !canvas.is_null() {
+        // SAFETY: `canvas` was returned by `katatui_canvas_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(canvas)) };
     }
 }

@@ -87,6 +87,7 @@ private val WIDGET_ROWS =
 fun main() {
   terminal {
     val scrollbarState = ScrollbarState()
+    val codeScrollbarState = ScrollbarState()
     val appStore = AppStore()
     val env = readEnv()
     val scope = CoroutineScope(Dispatchers.Default)
@@ -157,7 +158,7 @@ fun main() {
               if (imageState == null && future.isCompleted) imageState = future.getCompleted()
               renderImageTab(content, imageState, loading = !future.isCompleted)
             }
-            7 -> renderKatatuiCodeTab(content, state.codeState, env)
+            7 -> renderKatatuiCodeTab(content, state.codeState, env, codeScrollbarState)
           }
         }
       }
@@ -167,6 +168,7 @@ fun main() {
     imageState?.close()
     picker.close()
     scrollbarState.close()
+    codeScrollbarState.close()
   }
 }
 

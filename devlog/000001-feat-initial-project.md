@@ -551,4 +551,24 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 
 ## Commits
 
-HEAD — fix: guard framework binary creation to Apple targets only
+da249ce — fix: guard framework binary creation to Apple targets only
+
+## What Changed (session 27 — PR review fixes)
+
+2026-02-28T17:52-0800 sample-app/src/.../main.kt — added `codeScrollbarState: ScrollbarState` alongside `scrollbarState`; closed at app exit; passed to `renderKatatuiCodeTab`
+2026-02-28T17:52-0800 sample-app/src/.../renderKatatuiCode.kt — `renderKatatuiCodeTab` now accepts `scrollbarState: ScrollbarState` and passes it to `renderMessages`; removed per-frame `ScrollbarState().use { }` allocation; `renderMessages` accepts and uses the long-lived state; `renderStatusBar` accepts `state: KatatuiCodeState` and reads `state.model` instead of `env.model`
+2026-02-28T17:52-0800 sample-app/src/.../KatatuiCode.kt — added `val model: String = "claude-sonnet-4-6"` to `KatatuiCodeState`; removed `model` field from `KatatuiCodeEnv`; removed hardcoded string from `readEnv()`
+2026-02-28T17:52-0800 katatui/build.gradle.kts — removed duplicate top-level `skie {}` block (line 147); the canonical placement inside `kotlin { }` at line 107 is the correct one
+2026-02-28T17:52-0800 katatui/src/.../Layout.kt — removed spurious `+1` from `allocArray<KatatuiRect>` allocation; ratatui always returns exactly `constraints.len()` rects, never more
+2026-02-28T17:52-0800 katatui-ffi/src/widgets/layout.rs — corrected doc comment: `constraints.len() + 1` → `constraints.len()`
+2026-02-28T17:52-0800 katatui-ffi/src/widgets/{block,paragraph,list,clear,gauge,line_gauge,sparkline,bar_chart,tabs,table,scrollbar,chart,canvas,logo,image}.rs — added `// SAFETY:` comments before every `unsafe { drop(Box::from_raw(…)) }` explaining the invariant (returned by `_new()`, not freed before, caller holds exclusive ownership)
+2026-02-28T17:52-0800 katatui-ffi/src/lib.rs — added `// SAFETY:` to `katatui_terminal_free` and to the `Box::from_raw(frame_ptr)` in `katatui_terminal_end_draw`; added `// TODO:` documenting that `Terminal::draw()` I/O errors are silently discarded
+
+## Decisions (session 27)
+
+2026-02-28T17:52-0800 `codeScrollbarState` in `main()`, not in `KatatuiCodeState` — placing a C-heap resource in a `data class` pollutes `equals`/`hashCode` and makes cleanup non-obvious; the existing pattern (`scrollbarState` passed as a parameter) is cleaner and consistent
+2026-02-28T17:52-0800 `model` as immutable `val` in `KatatuiCodeState` — model is session state, not environment config; placing it in state means it will naturally follow the MVI `copy()` pattern when a future intent changes it
+
+## Commits
+
+HEAD — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY comments, model in state

@@ -48,6 +48,7 @@ data class KatatuiCodeState(
   val cursorPos: Int = 0,
   val scrollOffset: Int = 0,
   val selectedSuggestion: Int = 0,
+  val model: String = "claude-sonnet-4-6",
 ) {
   val suggestions: List<String>
     get() = if (input.startsWith("/")) ALL_COMMANDS.filter { it.startsWith(input) } else emptyList()
@@ -138,13 +139,13 @@ fun reduce(state: KatatuiCodeState, intent: KatatuiCodeIntent): KatatuiCodeState
 
 // ---- Environment ----
 
-data class KatatuiCodeEnv(val cwd: String, val branch: String, val model: String)
+data class KatatuiCodeEnv(val cwd: String, val branch: String)
 
 fun readEnv(): KatatuiCodeEnv {
   val home = getenv("HOME")?.toKString() ?: ""
   val raw = getenv("PWD")?.toKString() ?: "."
   val cwd = if (home.isNotEmpty() && raw.startsWith(home)) "~${raw.removePrefix(home)}" else raw
-  return KatatuiCodeEnv(cwd, readGitBranch() ?: "", "claude-sonnet-4-6")
+  return KatatuiCodeEnv(cwd, readGitBranch() ?: "")
 }
 
 private fun readGitBranch(): String? {

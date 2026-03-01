@@ -40,6 +40,8 @@ pub extern "C" fn katatui_terminal_new() -> *mut KatatuiTerminal {
 #[no_mangle]
 pub extern "C" fn katatui_terminal_free(terminal: *mut KatatuiTerminal) {
     if !terminal.is_null() {
+        // SAFETY: `terminal` was returned by `katatui_terminal_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(terminal)) };
     }
 }
@@ -101,8 +103,13 @@ pub extern "C" fn katatui_terminal_end_draw(terminal: *mut KatatuiTerminal) {
     }
     let t = unsafe { &mut *terminal };
     if let Some(frame_ptr) = t.current_frame.take() {
+        // SAFETY: `frame_ptr` was allocated by `katatui_terminal_begin_draw()` and is
+        // consumed exactly once here; `t.current_frame.take()` ensures single consumption.
         let frame = unsafe { Box::from_raw(frame_ptr) };
         let ops = frame.ops;
+        // TODO: `Terminal::draw()` returns `io::Result`; errors (broken pipe, closed terminal)
+        // are silently discarded here. Surfacing them requires a return value from this
+        // function and a corresponding update to the Kotlin `draw()` wrapper.
         let _ = t.inner.draw(|rf| {
             for op in ops {
                 op(rf);

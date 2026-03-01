@@ -22,7 +22,12 @@ import kotlinx.cinterop.ExperimentalForeignApi
 // KATATUI_LOGO_SMALL text lines (katatui-ffi/src/widgets/logo.rs), plus a blank separator.
 private val LOGO_LINES = listOf("█▌▞▝ ▄▀▀▄▝▜▛▘▄▀▀▄▝▜▛▘█  █ █", "█▌▚▗ █▀▀█ ▐▌ █▀▀█ ▐▌ ▀▄▄▀ █", "")
 
-internal fun Frame.renderKatatuiCodeTab(area: Rect, state: KatatuiCodeState, env: KatatuiCodeEnv) {
+internal fun Frame.renderKatatuiCodeTab(
+  area: Rect,
+  state: KatatuiCodeState,
+  env: KatatuiCodeEnv,
+  scrollbarState: ScrollbarState,
+) {
   val suggHeight =
     if (state.isCommandMode && state.suggestions.isNotEmpty()) state.suggestions.size else 1
   val sections =
@@ -34,13 +39,17 @@ internal fun Frame.renderKatatuiCodeTab(area: Rect, state: KatatuiCodeState, env
       )
       .split(area)
 
-  renderMessages(sections[0], state)
+  renderMessages(sections[0], state, scrollbarState)
   renderInput(sections[1], state)
   renderSuggestions(sections[2], state)
-  renderStatusBar(sections[3], env)
+  renderStatusBar(sections[3], env, state)
 }
 
-private fun Frame.renderMessages(area: Rect, state: KatatuiCodeState) {
+private fun Frame.renderMessages(
+  area: Rect,
+  state: KatatuiCodeState,
+  scrollbarState: ScrollbarState,
+) {
   block(area) {
     title = "Katatui Code"
     borders = Borders.all.bits
@@ -76,12 +85,10 @@ private fun Frame.renderMessages(area: Rect, state: KatatuiCodeState) {
     this.area = inner
   }
 
-  ScrollbarState().use { sbState ->
-    sbState.contentLength = totalLines
-    sbState.position = clampedOffset
-    sbState.viewportContentLength = viewportHeight
-    scrollbar(sbState, area) { setOrientation(ScrollbarOrientation.VerticalRight) }
-  }
+  scrollbarState.contentLength = totalLines
+  scrollbarState.position = clampedOffset
+  scrollbarState.viewportContentLength = viewportHeight
+  scrollbar(scrollbarState, area) { setOrientation(ScrollbarOrientation.VerticalRight) }
 }
 
 private fun Frame.renderSuggestions(area: Rect, state: KatatuiCodeState) {
@@ -102,9 +109,9 @@ private fun Frame.renderInput(area: Rect, state: KatatuiCodeState) {
   }
 }
 
-private fun Frame.renderStatusBar(area: Rect, env: KatatuiCodeEnv) {
+private fun Frame.renderStatusBar(area: Rect, env: KatatuiCodeEnv, state: KatatuiCodeState) {
   paragraph {
-    text = "  ${env.cwd}   (${env.branch})   ·   ${env.model}"
+    text = "  ${env.cwd}   (${env.branch})   ·   ${state.model}"
     this.area = area
   }
 }

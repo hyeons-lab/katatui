@@ -32,6 +32,8 @@ pub extern "C" fn katatui_logo_new() -> *mut KatatuiLogo {
 #[no_mangle]
 pub extern "C" fn katatui_logo_free(logo: *mut KatatuiLogo) {
     if !logo.is_null() {
+        // SAFETY: `logo` was returned by `katatui_logo_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(logo)) };
     }
 }
@@ -79,6 +81,8 @@ pub extern "C" fn katatui_mascot_new() -> *mut KatatuiMascot {
 #[no_mangle]
 pub extern "C" fn katatui_mascot_free(mascot: *mut KatatuiMascot) {
     if !mascot.is_null() {
+        // SAFETY: `mascot` was returned by `katatui_mascot_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(mascot)) };
     }
 }

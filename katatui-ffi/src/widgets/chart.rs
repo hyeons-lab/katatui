@@ -104,6 +104,8 @@ pub extern "C" fn katatui_chart_free(chart: *mut KatatuiChart) {
                 style: c.current_style.take(),
             });
         }
+        // SAFETY: `chart` was returned by `katatui_chart_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(chart)) };
     }
 }

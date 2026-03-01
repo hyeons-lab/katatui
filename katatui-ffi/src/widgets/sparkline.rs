@@ -44,6 +44,8 @@ pub extern "C" fn katatui_sparkline_new() -> *mut KatatuiSparkline {
 #[no_mangle]
 pub extern "C" fn katatui_sparkline_free(sparkline: *mut KatatuiSparkline) {
     if !sparkline.is_null() {
+        // SAFETY: `sparkline` was returned by `katatui_sparkline_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(sparkline)) };
     }
 }

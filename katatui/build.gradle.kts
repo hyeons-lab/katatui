@@ -144,8 +144,6 @@ kotlin {
   compilerOptions { allWarningsAsErrors.set(true) }
 }
 
-skie {}
-
 // Wire cargo build + header → before cinterop task for each target.
 // Cinterop task name format: cinterop<InteropName><TargetName> e.g. cinteropKatatuiMacosArm64
 rustTriples.keys.forEach { target ->

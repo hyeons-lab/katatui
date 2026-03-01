@@ -24,6 +24,8 @@ pub extern "C" fn katatui_picker_new() -> *mut KatatuiPicker {
 #[no_mangle]
 pub extern "C" fn katatui_picker_free(picker: *mut KatatuiPicker) {
     if !picker.is_null() {
+        // SAFETY: `picker` was returned by `katatui_picker_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(picker)) };
     }
 }
@@ -93,6 +95,8 @@ pub extern "C" fn katatui_image_state_from_bytes(
 #[no_mangle]
 pub extern "C" fn katatui_image_state_free(state: *mut KatatuiImageState) {
     if !state.is_null() {
+        // SAFETY: `state` was returned by a `katatui_image_state_*` constructor, has not been
+        // freed before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(state)) };
     }
 }
