@@ -521,6 +521,12 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 
 **SKIE interface discovery:** The `.build/` cached swiftmodule was stale; built fresh `assembleKatatuiReleaseXCFramework` to get the correct generated interface and confirmed the actual API: `readEvent(timeoutMs: Swift.Int64)` is a top-level function (no `Event.` namespace); `.key` case carries `TerminalEventKey` with `key: Any?` (bridged as `KotlinUShort`).
 
+## What Changed (session 30 — address PR comments)
+
+2026-02-28T20:55-0800 katatui/src/nativeMain/kotlin/com/hyeonslab/katatui/Event.kt — added `require(timeoutMs >= 0L)` guard before `toULong()` conversion (negative input would produce a massive ULong, blocking indefinitely); updated `Key` doc comment to clarify `key` is always non-null when produced by `readEvent()` (the `null` case was misleading — 0 maps to `Other`, not `Key(null)`)
+2026-02-28T20:55-0800 katatui/src/nativeMain/kotlin/com/hyeonslab/katatui/Rect.kt — clamp `x + 1` and `y + 1` in `inner()` to `UShort.MAX_VALUE` via `coerceAtMost` before converting back to `UShort`; without the clamp a rect at x=65535 would overflow and wrap to 0
+2026-02-28T20:55-0800 sample-app/src/nativeMain/kotlin/com/hyeonslab/katatui/sample/renderKatatuiCode.kt — coerce `totalLines` and `clampedOffset` to `0..65535` before assigning to `ScrollbarState`; the state's setters call `require(value in 0..65535)` and would throw for large documents
+
 ## What Changed (session 29 — fix Windows host triple in buildKatatuiFfiHeader)
 
 2026-02-28T19:43-0800 katatui/build.gradle.kts — changed `val hostTriple = if (isMac) "aarch64-apple-darwin" else "x86_64-unknown-linux-gnu"` to a `when` block: Mac → `aarch64-apple-darwin`, Windows → `x86_64-pc-windows-gnu`, Linux → `x86_64-unknown-linux-gnu`
@@ -563,5 +569,6 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 da249ce — fix: guard framework binary creation to Apple targets only
 f07d37e — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY comments, model in state
 b495dd3 — fix: all four pre-existing CI failures (lint task, Windows shell, Linux cross-linker, Swift SKIE)
-HEAD — fix: buildKatatuiFfiHeader uses wrong host triple on Windows
+e569cc8 — fix: buildKatatuiFfiHeader uses wrong host triple on Windows
+HEAD — fix: address PR comments (Event validation, Rect clamp, ScrollbarState coerce)
 

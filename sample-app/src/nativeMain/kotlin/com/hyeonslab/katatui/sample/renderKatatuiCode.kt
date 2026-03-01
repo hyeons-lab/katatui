@@ -85,8 +85,8 @@ private fun Frame.renderMessages(
     this.area = inner
   }
 
-  scrollbarState.contentLength = totalLines
-  scrollbarState.position = clampedOffset
+  scrollbarState.contentLength = totalLines.coerceIn(0, 65535)
+  scrollbarState.position = clampedOffset.coerceIn(0, 65535)
   scrollbarState.viewportContentLength = viewportHeight
   scrollbar(scrollbarState, area) { setOrientation(ScrollbarOrientation.VerticalRight) }
 }

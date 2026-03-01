@@ -34,7 +34,9 @@ sealed interface TerminalEvent {
   /** Synthetic tick: no key was pressed within the poll interval. */
   object Tick : TerminalEvent
 
-  /** A key was pressed. [key] is the character, or `null` for unknown keys. */
+  /**
+   * A key was pressed. [key] is the character code; always non-null when produced by [readEvent].
+   */
   data class Key(val key: Char?) : TerminalEvent
 
   /** A non-key event (real resize, mouse, paste, etc.) — safe to ignore. */
@@ -49,9 +51,11 @@ sealed interface TerminalEvent {
  * - [TerminalEvent.Key] on a key press
  * - [TerminalEvent.Other] for non-key events (resize, mouse, paste, etc.)
  */
-fun readEvent(timeoutMs: Long = 100L): TerminalEvent =
-  when (val code = katatui_event_read_extended(timeoutMs.toULong()).toInt()) {
+fun readEvent(timeoutMs: Long = 100L): TerminalEvent {
+  require(timeoutMs >= 0L) { "timeoutMs must be non-negative, got $timeoutMs" }
+  return when (val code = katatui_event_read_extended(timeoutMs.toULong()).toInt()) {
     256 -> TerminalEvent.Tick
     0 -> TerminalEvent.Other
     else -> TerminalEvent.Key(code.toChar())
   }
+}
