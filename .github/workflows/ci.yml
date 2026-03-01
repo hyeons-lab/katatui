@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Quality Checks
         run: |
-          ./gradlew ktfmtCheck detektJvmMain --no-build-cache
+          ./gradlew ktfmtCheck detekt --no-build-cache
 
   apple:
     name: Apple Targets
@@ -176,6 +176,7 @@ jobs:
           targets: x86_64-pc-windows-gnu
 
       - name: Build Windows targets
+        shell: bash
         run: |
           ./gradlew :katatui:compileKotlinMingwX64 \
             :sample-app:compileKotlinMingwX64 \

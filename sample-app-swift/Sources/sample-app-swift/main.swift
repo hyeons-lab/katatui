@@ -5,12 +5,14 @@ Katatui.terminal { t in
 
     mainLoop: while true {
         var shouldRender = false
-        switch Event.readEvent() {
+        switch onEnum(of: readEvent(timeoutMs: 100)) {
         case .tick:
             tick = (tick + 1) % 100
             shouldRender = true
-        case .key(let key):
-            if key?.character == "q" { break mainLoop }
+        case .key(let k):
+            if let code = k.key as? KotlinUShort, code.uint16Value == "q".utf16.first! {
+                break mainLoop
+            }
             shouldRender = true
         case .other:
             break

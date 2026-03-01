@@ -77,24 +77,6 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 
 **Generated files in src/ scanned by ktfmt:** Moved generated output to build/generated-sources/ following Gradle convention. ktfmt and detekt skip build/ directories by default.
 
-## Commits
-
-3435a90 — fix: complete Kotlin wrappers — codegen, layout FFI, exception safety
-aa170a2 — feat: initial Katatui project scaffold
-61386c3 — chore: add devlog scaffolding for feat/initial-project
-17e649d — chore: update devlog
-4a77070 — fix: use ratatui::try_init() to propagate terminal errors as null
-7f412fa — feat: Katatui sealed interface; generated widgets implement Katatui
-befb93e — refactor: rename Katatui sealed interface to KatatuiWidget
-e2db0f4 — refactor: move Terminal non-lifecycle methods to extension functions
-e09c5ed — feat: add Clear, Gauge, LineGauge, Sparkline, BarChart, Tabs, Table widgets
-aa4986f — feat: widget showcase sample app with tabs, sparkline, gauges, barchart, table
-2faec07 — chore: update devlog
-0de71ba — test: add test suite for codegen and katatui modules
-7003cfd — test: tighten OptIn assertion and use Reset short name
-3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
-HEAD — chore: update devlog
-
 ## What Changed (session 3)
 
 2026-02-26T07:08-0800 devlog/plans/000001-02-add-widgets.md — plan for adding 7 remaining ratatui widgets
@@ -320,16 +302,6 @@ HEAD — chore: update devlog
 2026-02-27T17:06-0800 One tab per new widget — Chart, Canvas, Scrollbar each get their own tab to clearly isolate the widget demo; Logo and Mascot share a Branding tab since they're thematically paired
 2026-02-27T17:06-0800 tick-driven animation, no extra state — Chart/Canvas/Scrollbar all derive their animated values from the existing `tick` counter; only ScrollbarState requires a new object (it holds C-side cursor state that must persist across frames)
 
-## Commits
-
-3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
-0f0440b — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
-ac16d1b — refactor: consolidate Marker enums and fix review issues
-bf11cb1 — test: remove redundant null assertion and unused import in HeaderParserTest
-7dbdbcc — test: migrate all assertions to kotest
-4342e07 — feat: expand sample app to showcase all 15 widgets across 7 tabs
-HEAD — fix: always link katatui Rust FFI release lib regardless of Kotlin binary type
-
 ## Issues (session 13 cont.)
 
 **`./gradlew build` failed — `ld: library 'katatui_ffi' not found` on macosX64:** The `katatui/build.gradle.kts` `binaries.all` block used `if (optimized) "release" else "debug"` to select the Rust library path. Test binaries are non-optimized, so they looked for the `debug` build. The cargo task only builds `--release`. For `macosArm64` this was masked because `buildKatatuiFfiHeader` incidentally produced a debug arm64 lib. For `macosX64` no debug lib was ever created. Fixed by always linking against `release` — the Rust optimization level is independent of the Kotlin binary type.
@@ -377,13 +349,6 @@ HEAD — fix: always link katatui Rust FFI release lib regardless of Kotlin bina
 2026-02-27T19:17-0800 ScrollbarState().use per-frame for CC tab — CC tab owns its scrollbar state; create+close per frame avoids adding it to the main lifecycle; .use handles AutoCloseable cleanup
 2026-02-27T19:17-0800 when (val key = readKey()) — binding the key to a val in the when expression allows the else branch to reference the value for the TypeChar dispatch; key is Char? but null cannot fall in the ' '..'~' range so key!! is not needed (null check in else branch)
 
-## Commits
-
-4342e07 — feat: expand sample app to showcase all 15 widgets across 7 tabs
-27675bf — fix: always link katatui Rust FFI release lib regardless of Kotlin binary type
-3c6b74c — fix: address all PR review issues
-HEAD — feat: add Katatui Code TUI tab (8th tab, MVI architecture)
-
 ## What Changed (session 16 — vertical suggestion menu)
 
 2026-02-27T19:52-0800 sample-app/src/.../sample/KatatuiCode.kt — added `PrevSuggestion` intent to sealed interface; added reducer arm: wraps index backward with `(selectedSuggestion - 1 + size) % size`
@@ -396,10 +361,6 @@ HEAD — feat: add Katatui Code TUI tab (8th tab, MVI architecture)
 2026-02-27T19:52-0800 Dynamic layout height for suggestions — `Length(suggestions.size)` collapses to `Length(1)` when no suggestions, preserving layout stability (no layout re-flow visible to user when suggestions disappear)
 2026-02-27T19:52-0800 ↑/↓ gated on isCommandMode — outside command mode ↑/↓ continue to scroll message history; inside command mode they navigate suggestions; consistent with how most TUI apps disambiguate context-sensitive keys
 
-## Commits
-
-HEAD — feat: vertical suggestion menu for Katatui Code tab (↑/↓ navigation)
-
 ## What Changed (session 17 — katatui logo)
 
 2026-02-27T20:21-0800 katatui-ffi/src/widgets/logo.rs — replaced `build_logo` return type from `RatatuiLogo` to `Text<'static>`; added `KATATUI_LOGO_TINY` and `KATATUI_LOGO_SMALL` constants spelling "katatui" with block characters in the same style as the ratatui logo; only the first letter differs (`r` → `k`): tiny uses `▌▞`/`▌▚` (left bar + diagonal slash/backslash), small uses `█▌▞▝`/`█▌▚▗` (heavy bar + left half + diagonal + quarter tip)
@@ -408,10 +369,6 @@ HEAD — feat: vertical suggestion menu for Katatui Code tab (↑/↓ navigation
 
 2026-02-27T20:21-0800 Return `Text<'static>` from `build_logo` — `RatatuiLogo` is just `Text::raw(static_str)` internally; returning `Text<'static>` directly is simpler and removes the dependency on ratatui's logo widget; `Text` implements `Widget` so the lib.rs render call is unchanged
 2026-02-27T20:21-0800 Only replace the `r` glyph — all other letters in "ratatui" are identical to "katatui"; reusing the existing block-character designs for a, t, u, i preserves the visual style; k is designed as `▌▞`/`▌▚` (tiny: left-half + forward/backslash diagonal) and `█▌▞▝`/`█▌▚▗` (small: full + left-half + diagonal + quarter tip)
-
-## Commits
-
-HEAD — feat: replace ratatui logo with katatui block-character logo
 
 ## What Changed (session 18 — MVI refactor: AppStore)
 
@@ -423,10 +380,6 @@ HEAD — feat: replace ratatui logo with katatui block-character logo
 
 2026-02-27T21:12-0800 KeyPress captures raw Char? and reduceKey does all routing — removes all conditional dispatch logic from main.kt; key-to-intent translation is in one testable place; main loop is three lines: tick, draw, forward key
 2026-02-27T21:12-0800 AppStore composes KatatuiCodeState — codeState becomes a field of AppState; Code(intent) arm delegates to the existing KatatuiCodeState reducer; KatatuiCodeStore removed as redundant wrapper
-
-## Commits
-
-HEAD — refactor: full MVI architecture for sample-app (AppStore, AppState, AppIntent)
 
 ## What Changed (session 19 — Picker FFI + image tab lifecycle)
 
@@ -464,10 +417,6 @@ HEAD — refactor: full MVI architecture for sample-app (AppStore, AppState, App
 
 2026-02-28T00:00-0800 sample-app/src/.../sample/renderKatatuiCode.kt — fixed unicode escape errors in LOGO_LINES (▘ and ▌ were both incorrectly `\u2588` (█)); replaced all unicode escapes with literal characters; reverted attempted 'k' gap fill (`██▞▞`/`██▚▚`) — looked worse visually; restored original `█▌▞▝`/`█▌▚▗`
 
-## Commits
-
-e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, katatui logo
-
 ## What Changed (session 22 — PR review fixes)
 
 2026-02-28T07:17-0800 katatui-ffi/src/widgets/chart.rs — replaced `eprintln!` warning in `katatui_chart_free` with auto-commit: if `current_data` is non-empty when the chart is freed, the pending dataset is committed rather than silently dropped; removes invisible stderr noise while preventing data loss
@@ -480,10 +429,6 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 
 2026-02-28T07:17-0800 Auto-commit on free instead of removing eprintln! — removing the warning entirely would make the data-loss silent with no fix; auto-committing converts the bug into correct behavior (pending dataset is preserved); consistent with the "be liberal in what you accept" principle for resource destructors
 2026-02-28T07:17-0800 `@file:OptIn` over per-declaration `@OptIn` — all other `*Ext.kt` files use file-level opt-in; this avoids having to annotate every new function added later and is the idiomatic Kotlin convention for files that are uniformly experimental
-
-## Commits
-
-4e2de2a — fix: address PR review comments (chart, scrollbar, OptIn, layout)
 
 ## What Changed (session 23 — event-driven render loop)
 
@@ -503,10 +448,6 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 
 **`event::push_event` not in crossterm 0.28/0.29:** Plan assumed `event::push_event` exists in crossterm 0.28. Cargo build failed with `E0425: cannot find function 'push_event' in module 'event'`. Confirmed absent in both 0.28.1 and 0.29.0 in the local registry. Resolved by using `event::poll(timeout)` returning 256 on timeout instead.
 
-## Commits
-
-3d7dd0d — feat: event-driven render loop (blocking poll, immediate key feedback)
-
 ## What Changed (session 24 — remove polling event API)
 
 2026-02-28T10:17-0800 katatui-ffi/src/lib.rs — deleted `katatui_event_poll` and `katatui_event_read_key_code` functions; both are dead code now that the event-driven `katatui_event_read_extended` path is the only consumer; `use std::time::Duration` and `use crossterm::event::KeyEventKind` kept (still used by `katatui_event_read_extended`)
@@ -520,10 +461,6 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 2026-02-28T10:17-0800 Remove poll/readKey, keep KEY_* constants — `poll` and `readKey` are dead code (Kotlin sample already uses `readEvent`; Swift sample was the only remaining caller). KEY_* constants are still imported in `App.kt` and are part of the public API for key comparison, so they stay.
 2026-02-28T10:17-0800 Swift switch on TerminalEvent — mirrors the Kotlin sample's `when (readEvent())` pattern; SKIE bridges Kotlin sealed interface → Swift enum automatically; `key?.character` extracts Swift `Character` from the SKIE-bridged `KotlinChar?`
 
-## Commits
-
-379d53e — refactor: remove deprecated poll/readKey API, migrate Swift sample to readEvent
-
 ## What Changed (session 25 — review fixes)
 
 2026-02-28T12:15-0800 katatui-ffi/src/lib.rs — fixed stale doc comment on `katatui_event_read_extended`: replaced "same mapping as katatui_event_read_key_code" (deleted function) with inline key-code table
@@ -532,10 +469,6 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 ## Decisions (session 25)
 
 2026-02-28T12:15-0800 shouldRender pattern in Swift — mirrors Kotlin's `when (ev) { Tick -> …; Key -> …; Other -> false }` exactly; draw block is in one place; `break mainLoop` inside `.key` still works because Swift `break <label>` targets the named while loop, not the switch
-
-## Commits
-
-0506f1e — fix: stale doc comment and missing key-event redraw in Swift sample
 
 ## What Changed (session 26 — CI fix: framework on non-Apple targets)
 
@@ -548,10 +481,6 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 ## Issues (session 26)
 
 **Framework binary on Linux/Windows targets:** CI discovered that `binaries.framework { }` inside `targets.withType<KotlinNativeTarget>().configureEach { }` applies to all registered targets unconditionally. On Linux CI, `linuxArm64` and `linuxX64` were registered and the framework call failed at configuration time. The bug was pre-existing and only surfaced on CI (local Mac builds only register macOS targets so `configureEach` never ran for non-Apple targets locally).
-
-## Commits
-
-da249ce — fix: guard framework binary creation to Apple targets only
 
 ## What Changed (session 27 — PR review fixes)
 
@@ -569,6 +498,61 @@ da249ce — fix: guard framework binary creation to Apple targets only
 2026-02-28T17:52-0800 `codeScrollbarState` in `main()`, not in `KatatuiCodeState` — placing a C-heap resource in a `data class` pollutes `equals`/`hashCode` and makes cleanup non-obvious; the existing pattern (`scrollbarState` passed as a parameter) is cleaner and consistent
 2026-02-28T17:52-0800 `model` as immutable `val` in `KatatuiCodeState` — model is session state, not environment config; placing it in state means it will naturally follow the MVI `copy()` pattern when a future intent changes it
 
+## What Changed (session 28 — CI fixes: lint, Windows, Linux cross-linker, Swift SKIE)
+
+2026-02-28T19:11-0800 .github/workflows/ci.yml — changed `detektJvmMain` → `detekt` in Lint & Quality job (task does not exist; `detekt` is the correct aggregating task)
+2026-02-28T19:11-0800 .github/workflows/ci.yml — added `shell: bash` to "Build Windows targets" step; PowerShell cannot parse `\` line continuation in multi-line Gradle commands
+2026-02-28T19:11-0800 katatui-ffi/.cargo/config.toml — new; sets `linker = "aarch64-linux-gnu-gcc"` for `[target.aarch64-unknown-linux-gnu]`; without this, Cargo defaults to the host `cc` (x86-64) and `rust-lld` fails to produce an `elf64-aarch64` binary in cross-compilation
+2026-02-28T19:11-0800 sample-app-swift/Sources/sample-app-swift/main.swift — replaced `Event.readEvent()` (non-existent `Event` namespace) + direct `.tick`/`.key` case matching with `onEnum(of: readEvent(timeoutMs: 100))`; key check updated from `key?.character == "q"` (SKIE does not bridge `Char?` as Swift `Character`) to `k.key as? KotlinUShort, code.uint16Value == "q".utf16.first!`
+
+## Decisions (session 28)
+
+2026-02-28T19:11-0800 `detekt` not `detektJvmMain` — CI was calling a target-specific task that only exists when the `jvm` target is configured; the aggregating `detekt` task runs checks across all configured source sets and is always available
+2026-02-28T19:11-0800 `onEnum(of:)` required for SKIE sealed enums — SKIE bridges Kotlin sealed interfaces to Swift as `any ProtocolName`; Swift's type system cannot directly switch on `any` existentials using dot-case syntax; `onEnum(of:)` is the SKIE-generated helper that opens the existential into a concrete enum
+2026-02-28T19:11-0800 `KotlinUShort.uint16Value` for key comparison — SKIE bridges Kotlin `Char?` (underlying type: `KatatuiChar`) as ObjC `KatatuiChar?` which projects to Swift `Any?`; casting to `KotlinUShort` (Swift name for `KatatuiUShort`) and comparing `.uint16Value` against `"q".utf16.first!` is the correct pattern; `key?.character` (used in the previous code) did not exist on the bridged type
+
+## Issues (session 28)
+
+**All four CI jobs were pre-existing failures** (not introduced by PR commits):
+- Lint: `Task 'detektJvmMain' not found` — incorrect task name in workflow
+- Windows: `ParserError: Missing expression after unary operator '--'` — PowerShell cannot parse backslash line continuations
+- Linux: `rust-lld: incompatible with elf64-x86-64` — cargo used the host linker for aarch64 cross-compilation
+- Apple: `type 'any TerminalEvent' has no member 'tick'` — Swift code used wrong namespace + wrong switch pattern for SKIE sealed enum
+
+**SKIE interface discovery:** The `.build/` cached swiftmodule was stale; built fresh `assembleKatatuiReleaseXCFramework` to get the correct generated interface and confirmed the actual API: `readEvent(timeoutMs: Swift.Int64)` is a top-level function (no `Event.` namespace); `.key` case carries `TerminalEventKey` with `key: Any?` (bridged as `KotlinUShort`).
+
 ## Commits
 
-HEAD — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY comments, model in state
+cb700a4 — chore: initial empty commit
+61386c3 — chore: add devlog scaffolding for feat/initial-project
+aa170a2 — feat: initial Katatui project scaffold
+3435a90 — fix: complete Kotlin wrappers — codegen, layout FFI, exception safety
+17e649d — chore: update devlog
+4a77070 — fix: use ratatui::try_init() to propagate terminal errors as null
+7f412fa — feat: Katatui sealed interface; generated widgets implement Katatui
+befb93e — refactor: rename Katatui sealed interface to KatatuiWidget
+e2db0f4 — refactor: move Terminal non-lifecycle methods to extension functions
+e09c5ed — feat: add Clear, Gauge, LineGauge, Sparkline, BarChart, Tabs, Table widgets
+aa4986f — feat: widget showcase sample app with tabs, sparkline, gauges, barchart, table
+2faec07 — chore: update devlog
+98a6880 — feat: implement initial Katatui library with Kotlin and Swift DSLs
+0de71ba — test: add test suite for codegen and katatui modules
+7003cfd — test: tighten OptIn assertion and use Reset short name
+3555458 — feat: add Scrollbar, Chart, Canvas, Logo, and Mascot widgets
+a682a28 — chore: update devlog for session 9 (missing widgets)
+0f0440b — refactor: use cbindgen prefix_with_name for consistent C enum namespacing
+ac16d1b — refactor: consolidate Marker enums and fix review issues
+7dbdbcc — test: migrate all assertions to kotest
+bf11cb1 — test: remove redundant null assertion and unused import in HeaderParserTest
+4342e07 — feat: expand sample app to showcase all 15 widgets across 7 tabs
+27675bf — fix: always link katatui Rust FFI release lib regardless of Kotlin binary type
+3c6b74c — fix: address all PR review issues
+e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, katatui logo
+4e2de2a — fix: address PR review comments (chart, scrollbar, OptIn, layout)
+3d7dd0d — feat: event-driven render loop (blocking poll, immediate key feedback)
+379d53e — refactor: remove deprecated poll/readKey API, migrate Swift sample to readEvent
+0506f1e — fix: stale doc comment and missing key-event redraw in Swift sample
+da249ce — fix: guard framework binary creation to Apple targets only
+f07d37e — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY comments, model in state
+HEAD — fix: all four pre-existing CI failures (lint task, Windows shell, Linux cross-linker, Swift SKIE)
+
