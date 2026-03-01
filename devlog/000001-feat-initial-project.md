@@ -521,6 +521,14 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 
 **SKIE interface discovery:** The `.build/` cached swiftmodule was stale; built fresh `assembleKatatuiReleaseXCFramework` to get the correct generated interface and confirmed the actual API: `readEvent(timeoutMs: Swift.Int64)` is a top-level function (no `Event.` namespace); `.key` case carries `TerminalEventKey` with `key: Any?` (bridged as `KotlinUShort`).
 
+## What Changed (session 29 — fix Windows host triple in buildKatatuiFfiHeader)
+
+2026-02-28T19:43-0800 katatui/build.gradle.kts — changed `val hostTriple = if (isMac) "aarch64-apple-darwin" else "x86_64-unknown-linux-gnu"` to a `when` block: Mac → `aarch64-apple-darwin`, Windows → `x86_64-pc-windows-gnu`, Linux → `x86_64-unknown-linux-gnu`
+
+## Issues (session 29)
+
+**`buildKatatuiFfiHeader` crashed on Windows CI with cargo exit code 101:** The host-triple selection used `if (isMac) … else "x86_64-unknown-linux-gnu"`. On Windows, `x86_64-unknown-linux-gnu` is not an installed target, so cargo panicked (exit code 101 = Rust thread panic). Linux and Lint passed with `b495dd3`; Apple passed; Windows was the only remaining failure. Fixed by adding an `isWindows -> "x86_64-pc-windows-gnu"` branch — that target is installed by the `dtolnay/rust-toolchain` step in the Windows CI job.
+
 ## Commits
 
 cb700a4 — chore: initial empty commit
@@ -554,5 +562,6 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 0506f1e — fix: stale doc comment and missing key-event redraw in Swift sample
 da249ce — fix: guard framework binary creation to Apple targets only
 f07d37e — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY comments, model in state
-HEAD — fix: all four pre-existing CI failures (lint task, Windows shell, Linux cross-linker, Swift SKIE)
+b495dd3 — fix: all four pre-existing CI failures (lint task, Windows shell, Linux cross-linker, Swift SKIE)
+HEAD — fix: buildKatatuiFfiHeader uses wrong host triple on Windows
 
