@@ -124,10 +124,12 @@ kotlin {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }
     }
-    binaries.framework {
-      baseName = "Katatui"
-      isStatic = true
-      xcf.add(this)
+    if (isMac) {
+      binaries.framework {
+        baseName = "Katatui"
+        isStatic = true
+        xcf.add(this)
+      }
     }
   }
 

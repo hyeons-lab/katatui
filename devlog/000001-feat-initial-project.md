@@ -535,4 +535,20 @@ e0c5c1a — feat: Katatui Code tab, MVI app architecture, Picker FFI image fix, 
 
 ## Commits
 
-HEAD — fix: stale doc comment and missing key-event redraw in Swift sample
+0506f1e — fix: stale doc comment and missing key-event redraw in Swift sample
+
+## What Changed (session 26 — CI fix: framework on non-Apple targets)
+
+2026-02-28T17:15-0800 katatui/build.gradle.kts — wrapped `binaries.framework { }` in `if (isMac)` guard; previously `configureEach` applied the framework binary to all registered targets including `linuxArm64`/`linuxX64`/`mingwX64`, causing CI failures with "Cannot create a framework: debugFramework. Binaries of this kind are not available for target linuxArm64"
+
+## Decisions (session 26)
+
+2026-02-28T17:15-0800 Guard with `isMac` not `konanTarget.family.isAppleFamily` — `isMac` is already defined at build script scope and is semantically equivalent here: Apple targets are only registered when `isMac` is true, so the guard is consistent with the existing target-registration pattern; avoids needing to import `org.jetbrains.kotlin.konan.target.Family` or its extensions
+
+## Issues (session 26)
+
+**Framework binary on Linux/Windows targets:** CI discovered that `binaries.framework { }` inside `targets.withType<KotlinNativeTarget>().configureEach { }` applies to all registered targets unconditionally. On Linux CI, `linuxArm64` and `linuxX64` were registered and the framework call failed at configuration time. The bug was pre-existing and only surfaced on CI (local Mac builds only register macOS targets so `configureEach` never ran for non-Apple targets locally).
+
+## Commits
+
+HEAD — fix: guard framework binary creation to Apple targets only
