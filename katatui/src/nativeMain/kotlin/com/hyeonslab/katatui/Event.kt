@@ -34,10 +34,8 @@ sealed interface TerminalEvent {
   /** Synthetic tick: no key was pressed within the poll interval. */
   object Tick : TerminalEvent
 
-  /**
-   * A key was pressed. [key] is the character code; always non-null when produced by [readEvent].
-   */
-  data class Key(val key: Char?) : TerminalEvent
+  /** A key was pressed. [key] is the character code. */
+  data class Key(val key: Char) : TerminalEvent
 
   /** A non-key event (real resize, mouse, paste, etc.) — safe to ignore. */
   object Other : TerminalEvent

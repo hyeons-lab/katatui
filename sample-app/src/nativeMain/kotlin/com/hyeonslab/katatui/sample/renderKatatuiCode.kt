@@ -62,32 +62,25 @@ private fun Frame.renderMessages(
 
   val allLines = LOGO_LINES + textLines
 
-  // Count how many terminal rows each logical line occupies after word-wrap.
-  // Uses character-count ceiling as an approximation (accurate for typical messages).
-  fun visualRows(line: String): Int =
-    if (line.isEmpty() || viewportWidth <= 0) 1 else ((line.length - 1) / viewportWidth) + 1
+  // Pre-wrap each logical line into visual rows sized to the viewport width.
+  fun wrapLine(line: String): List<String> =
+    if (line.isEmpty() || viewportWidth <= 0) listOf("") else line.chunked(viewportWidth)
 
-  val totalLines = allLines.sumOf { visualRows(it) }
+  val visualLines = allLines.flatMap { wrapLine(it) }
+  val totalLines = visualLines.size
   // scrollOffset is distance from the bottom; convert to a top-anchored offset for rendering.
   val maxOffset = maxOf(0, totalLines - viewportHeight)
   val clampedOffset = maxOf(0, maxOffset - state.scrollOffset)
 
-  // Skip lines that have scrolled above the viewport.
-  var visualSoFar = 0
-  var lineIndex = 0
-  while (lineIndex < allLines.size && visualSoFar < clampedOffset) {
-    visualSoFar += visualRows(allLines[lineIndex])
-    lineIndex++
-  }
   paragraph {
-    text = allLines.drop(lineIndex).joinToString("\n")
-    wrap = true
+    text = visualLines.drop(clampedOffset).joinToString("\n")
+    wrap = false // already pre-wrapped
     this.area = inner
   }
 
   scrollbarState.contentLength = totalLines.coerceIn(0, 65535)
   scrollbarState.position = clampedOffset.coerceIn(0, 65535)
-  scrollbarState.viewportContentLength = viewportHeight
+  scrollbarState.viewportContentLength = viewportHeight.coerceIn(0, 65535)
   scrollbar(scrollbarState, area) { setOrientation(ScrollbarOrientation.VerticalRight) }
 }
 

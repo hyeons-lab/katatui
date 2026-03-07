@@ -362,6 +362,10 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 2026-02-28T17:52-0800 `codeScrollbarState` in `main()`, not in `KatatuiCodeState` — placing a C-heap resource in a `data class` pollutes `equals`/`hashCode` and makes cleanup non-obvious; the existing pattern (`scrollbarState` passed as a parameter) is cleaner and consistent
 2026-02-28T17:52-0800 `model` as immutable `val` in `KatatuiCodeState` — model is session state, not environment config; placing it in state means it will naturally follow the MVI `copy()` pattern when a future intent changes it
 
+2026-03-07T08:59-0800 Pre-wrap scroll in renderMessages — replaces the `visualRows()`/`visualSoFar`/`lineIndex` loop with `line.chunked(viewportWidth)` to produce explicit visual rows; `paragraph { wrap = false }` then renders exactly the visible slice; eliminates mid-wrapped-line jump artifacts when offset lands between wrapped rows of the same logical line
+2026-03-07T08:59-0800 `TerminalEvent.Key.key: Char` (non-nullable) — the `readEvent()` implementation always produces a valid Char from `code.toChar()`; the nullable type was a misleading remnant; making it `Char` enforces the invariant at the type level and removes the `key != null &&` guard in `reduceKey`
+2026-03-07T08:59-0800 `viewportContentLength.coerceIn(0, 65535)` — `viewportHeight` is an `Int` derived from `Rect.height.toInt()`, which can theoretically exceed the UShort range accepted by the FFI; applying the same coerce used on `contentLength` and `position` makes all three fields consistent
+
 2026-02-28T19:11-0800 `detekt` not `detektJvmMain` — CI was calling a target-specific task that only exists when the `jvm` target is configured; the aggregating `detekt` task runs checks across all configured source sets and is always available
 2026-02-28T19:11-0800 `onEnum(of:)` required for SKIE sealed enums — SKIE bridges Kotlin sealed interfaces to Swift as `any ProtocolName`; Swift's type system cannot directly switch on `any` existentials using dot-case syntax; `onEnum(of:)` is the SKIE-generated helper that opens the existential into a concrete enum
 2026-02-28T19:11-0800 `KotlinUShort.uint16Value` for key comparison — SKIE bridges Kotlin `Char?` (underlying type: `KatatuiChar`) as ObjC `KatatuiChar?` which projects to Swift `Any?`; casting to `KotlinUShort` (Swift name for `KatatuiUShort`) and comparing `.uint16Value` against `"q".utf16.first!` is the correct pattern; `key?.character` (used in the previous code) did not exist on the bridged type
@@ -464,3 +468,4 @@ f07d37e — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY com
 b495dd3 — fix: all four pre-existing CI failures (lint task, Windows shell, Linux cross-linker, Swift SKIE)
 e569cc8 — fix: buildKatatuiFfiHeader uses wrong host triple on Windows
 b272dd9 — fix: address PR comments (Event validation, Rect clamp, ScrollbarState coerce)
+HEAD — fix: address remaining PR comments (non-nullable Key, pre-wrap scroll, viewportContentLength coerce)

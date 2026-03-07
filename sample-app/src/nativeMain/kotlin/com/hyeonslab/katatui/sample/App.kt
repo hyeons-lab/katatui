@@ -112,7 +112,7 @@ sealed interface AppIntent {
 
   data class Code(val intent: KatatuiCodeIntent) : AppIntent
 
-  data class KeyPress(val key: Char?) : AppIntent
+  data class KeyPress(val key: Char) : AppIntent
 }
 
 // ---- Reducer ----
@@ -134,7 +134,7 @@ fun reduce(state: AppState, intent: AppIntent): AppState =
     is AppIntent.KeyPress -> reduceKey(state, intent.key)
   }
 
-private fun reduceKey(state: AppState, key: Char?): AppState =
+private fun reduceKey(state: AppState, key: Char): AppState =
   when (key) {
     'q' -> reduce(state, AppIntent.Quit)
     '1' -> reduce(state, AppIntent.SelectTab(0))
@@ -181,7 +181,7 @@ private fun reduceKey(state: AppState, key: Char?): AppState =
     KEY_ESC ->
       if (state.activeTab == 7) reduce(state, AppIntent.Code(KatatuiCodeIntent.Cancel)) else state
     else ->
-      if (key != null && key in ' '..'~' && state.activeTab == 7)
+      if (key in ' '..'~' && state.activeTab == 7)
         reduce(state, AppIntent.Code(KatatuiCodeIntent.TypeChar(key)))
       else state
   }
