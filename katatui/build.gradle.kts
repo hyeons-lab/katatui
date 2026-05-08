@@ -7,7 +7,12 @@ plugins {
   id("katatui-quality")
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.skie)
+  `maven-publish`
 }
+
+group = providers.gradleProperty("GROUP").get()
+
+version = providers.gradleProperty("VERSION_NAME").get()
 
 // Proper configuration for accessing :codegen's runtime classpath.
 // Declared here (not inline in the task) so Gradle's configuration cache can serialize it.
