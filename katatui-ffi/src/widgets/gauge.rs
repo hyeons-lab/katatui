@@ -36,6 +36,8 @@ pub extern "C" fn katatui_gauge_new() -> *mut KatatuiGauge {
 #[no_mangle]
 pub extern "C" fn katatui_gauge_free(gauge: *mut KatatuiGauge) {
     if !gauge.is_null() {
+        // SAFETY: `gauge` was returned by `katatui_gauge_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(gauge)) };
     }
 }

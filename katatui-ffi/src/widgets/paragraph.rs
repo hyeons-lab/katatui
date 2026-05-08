@@ -36,6 +36,8 @@ pub extern "C" fn katatui_paragraph_new(text: *const std::ffi::c_char) -> *mut K
 #[no_mangle]
 pub extern "C" fn katatui_paragraph_free(para: *mut KatatuiParagraph) {
     if !para.is_null() {
+        // SAFETY: `para` was returned by `katatui_paragraph_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(para)) };
     }
 }

@@ -3,12 +3,17 @@ package com.hyeonslab.katatui
 import cnames.structs.KatatuiFrame
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_bar_chart
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_block
+import com.hyeonslab.katatui.cinterop.katatui_frame_render_canvas
+import com.hyeonslab.katatui.cinterop.katatui_frame_render_chart
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_clear
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_gauge
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_image
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_line_gauge
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_list
+import com.hyeonslab.katatui.cinterop.katatui_frame_render_logo
+import com.hyeonslab.katatui.cinterop.katatui_frame_render_mascot
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_paragraph
+import com.hyeonslab.katatui.cinterop.katatui_frame_render_scrollbar
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_sparkline
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_table
 import com.hyeonslab.katatui.cinterop.katatui_frame_render_tabs
@@ -64,6 +69,26 @@ class Frame internal constructor(private val ptr: CPointer<KatatuiFrame>) {
   fun render(state: ImageState, area: Rect = size) {
     katatui_frame_render_image(ptr, area.toCValue(), state.ptr)
   }
+
+  fun render(widget: Scrollbar, area: Rect = size, state: ScrollbarState) {
+    katatui_frame_render_scrollbar(ptr, area.toCValue(), widget.ptr, state.ptr)
+  }
+
+  fun render(widget: Chart, area: Rect = size) {
+    katatui_frame_render_chart(ptr, area.toCValue(), widget.ptr)
+  }
+
+  fun render(widget: Canvas, area: Rect = size) {
+    katatui_frame_render_canvas(ptr, area.toCValue(), widget.ptr)
+  }
+
+  fun render(widget: Logo, area: Rect = size) {
+    katatui_frame_render_logo(ptr, area.toCValue(), widget.ptr)
+  }
+
+  fun render(widget: Mascot, area: Rect = size) {
+    katatui_frame_render_mascot(ptr, area.toCValue(), widget.ptr)
+  }
 }
 
 fun Frame.image(state: ImageState, area: Rect = size) = render(state, area)
@@ -96,3 +121,18 @@ fun Frame.tabs(area: Rect = size, init: Tabs.() -> Unit = {}) =
 
 fun Frame.table(area: Rect = size, state: TableState? = null, init: Table.() -> Unit = {}) =
   Table(init).use { render(it, it.area ?: area, state) }
+
+fun Frame.scrollbar(state: ScrollbarState, area: Rect = size, init: Scrollbar.() -> Unit = {}) =
+  Scrollbar(init).use { render(it, it.area ?: area, state) }
+
+fun Frame.chart(area: Rect = size, init: Chart.() -> Unit = {}) =
+  Chart(init).use { render(it, it.area ?: area) }
+
+fun Frame.canvas(area: Rect = size, init: Canvas.() -> Unit = {}) =
+  Canvas(init).use { render(it, it.area ?: area) }
+
+fun Frame.logo(area: Rect = size, init: Logo.() -> Unit = {}) =
+  Logo(init).use { render(it, it.area ?: area) }
+
+fun Frame.mascot(area: Rect = size, init: Mascot.() -> Unit = {}) =
+  Mascot(init).use { render(it, it.area ?: area) }

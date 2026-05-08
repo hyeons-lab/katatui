@@ -16,6 +16,8 @@ pub extern "C" fn katatui_layout_new(direction: KatatuiDirection) -> *mut Katatu
 #[no_mangle]
 pub extern "C" fn katatui_layout_free(layout: *mut KatatuiLayout) {
     if !layout.is_null() {
+        // SAFETY: `layout` was returned by `katatui_layout_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(layout)) };
     }
 }
@@ -33,7 +35,7 @@ pub extern "C" fn katatui_layout_add_constraint(
 
 /// Splits the layout area into rects according to the constraints.
 /// Returns the number of rects written into `out_rects`.
-/// `out_rects` must point to a buffer of at least `constraints.len() + 1` elements.
+/// `out_rects` must point to a buffer of at least `constraints.len()` elements.
 #[no_mangle]
 pub extern "C" fn katatui_layout_split(
     layout: *mut KatatuiLayout,

@@ -29,6 +29,8 @@ pub extern "C" fn katatui_tabs_new() -> *mut KatatuiTabs {
 #[no_mangle]
 pub extern "C" fn katatui_tabs_free(tabs: *mut KatatuiTabs) {
     if !tabs.is_null() {
+        // SAFETY: `tabs` was returned by `katatui_tabs_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(tabs)) };
     }
 }

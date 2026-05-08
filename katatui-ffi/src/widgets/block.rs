@@ -37,6 +37,8 @@ pub extern "C" fn katatui_block_new() -> *mut KatatuiBlock {
 #[no_mangle]
 pub extern "C" fn katatui_block_free(block: *mut KatatuiBlock) {
     if !block.is_null() {
+        // SAFETY: `block` was returned by `katatui_block_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(block)) };
     }
 }

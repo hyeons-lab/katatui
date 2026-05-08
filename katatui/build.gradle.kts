@@ -66,7 +66,12 @@ val buildKatatuiFfiHeader by
     group = "rust"
     description = "Build Rust FFI (debug, host only) to regenerate katatui.h via cbindgen"
     workingDir = file("../katatui-ffi")
-    val hostTriple = if (isMac) "aarch64-apple-darwin" else "x86_64-unknown-linux-gnu"
+    val hostTriple =
+      when {
+        isMac -> "aarch64-apple-darwin"
+        isWindows -> "x86_64-pc-windows-gnu"
+        else -> "x86_64-unknown-linux-gnu"
+      }
     commandLine("cargo", "build", "--target", hostTriple)
     outputs.file("src/nativeInterop/cinterop/katatui.h")
     inputs.dir("../katatui-ffi/src")
@@ -117,16 +122,19 @@ kotlin {
       }
     }
     binaries.all {
-      val buildType = if (optimized) "release" else "debug"
-      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/$buildType", "-lkatatui_ffi")
+      // Always links against release: the Rust build task only produces a release static lib.
+      // Run `./gradlew buildKatatuiFfi_<target>` (cargo --release) to satisfy this path.
+      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/release", "-lkatatui_ffi")
       if (name.contains("mingw", ignoreCase = true)) {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }
     }
-    binaries.framework {
-      baseName = "Katatui"
-      isStatic = true
-      xcf.add(this)
+    if (isMac) {
+      binaries.framework {
+        baseName = "Katatui"
+        isStatic = true
+        xcf.add(this)
+      }
     }
   }
 
@@ -140,8 +148,6 @@ kotlin {
 
   compilerOptions { allWarningsAsErrors.set(true) }
 }
-
-skie {}
 
 // Wire cargo build + header → before cinterop task for each target.
 // Cinterop task name format: cinterop<InteropName><TargetName> e.g. cinteropKatatuiMacosArm64

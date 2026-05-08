@@ -8,15 +8,22 @@ pub struct KatatuiSparkline {
 }
 
 pub fn build_sparkline(s: &KatatuiSparkline) -> ratatui::widgets::Sparkline<'static> {
-    use ratatui::widgets::Sparkline;
-    // data() accepts any IntoIterator<Item: Into<SparklineBar>>; u64 implements that.
-    let mut sparkline = Sparkline::default().data(s.data.iter().copied());
+    use ratatui::widgets::{Sparkline, SparklineBar};
+    // When bar_style is set, wrap each data point in SparklineBar so the style
+    // is applied per-bar rather than to the whole widget.
+    let mut sparkline = if let Some(bar_style) = s.bar_style {
+        let bar_style: ratatui::style::Style = bar_style.into();
+        let styled: Vec<SparklineBar> = s
+            .data
+            .iter()
+            .map(|&v| SparklineBar::from(v).style(bar_style))
+            .collect();
+        Sparkline::default().data(styled)
+    } else {
+        Sparkline::default().data(s.data.iter().copied())
+    };
     if s.max > 0 {
         sparkline = sparkline.max(s.max);
-    }
-    // Apply bar_style first so explicit style wins if both are set.
-    if let Some(style) = s.bar_style {
-        sparkline = sparkline.style(style);
     }
     if let Some(style) = s.style {
         sparkline = sparkline.style(style);
@@ -37,6 +44,8 @@ pub extern "C" fn katatui_sparkline_new() -> *mut KatatuiSparkline {
 #[no_mangle]
 pub extern "C" fn katatui_sparkline_free(sparkline: *mut KatatuiSparkline) {
     if !sparkline.is_null() {
+        // SAFETY: `sparkline` was returned by `katatui_sparkline_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(sparkline)) };
     }
 }

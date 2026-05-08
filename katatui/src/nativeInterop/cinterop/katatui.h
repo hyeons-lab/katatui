@@ -4,43 +4,82 @@
 #include <stdlib.h>
 
 typedef enum KatatuiColor {
-  Reset = 0,
-  Black = 1,
-  Red = 2,
-  Green = 3,
-  Yellow = 4,
-  Blue = 5,
-  Magenta = 6,
-  Cyan = 7,
-  Gray = 8,
-  DarkGray = 9,
-  LightRed = 10,
-  LightGreen = 11,
-  LightYellow = 12,
-  LightBlue = 13,
-  LightMagenta = 14,
-  LightCyan = 15,
-  White = 16,
-  Rgb = 17,
-  Indexed = 18,
+  KatatuiColor_Reset = 0,
+  KatatuiColor_Black = 1,
+  KatatuiColor_Red = 2,
+  KatatuiColor_Green = 3,
+  KatatuiColor_Yellow = 4,
+  KatatuiColor_Blue = 5,
+  KatatuiColor_Magenta = 6,
+  KatatuiColor_Cyan = 7,
+  KatatuiColor_Gray = 8,
+  KatatuiColor_DarkGray = 9,
+  KatatuiColor_LightRed = 10,
+  KatatuiColor_LightGreen = 11,
+  KatatuiColor_LightYellow = 12,
+  KatatuiColor_LightBlue = 13,
+  KatatuiColor_LightMagenta = 14,
+  KatatuiColor_LightCyan = 15,
+  KatatuiColor_White = 16,
+  KatatuiColor_Rgb = 17,
+  KatatuiColor_Indexed = 18,
 } KatatuiColor;
 
 typedef enum KatatuiConstraintKind {
-  Length = 0,
-  Percentage = 1,
-  Min = 2,
-  Max = 3,
-  Fill = 4,
+  KatatuiConstraintKind_Length = 0,
+  KatatuiConstraintKind_Percentage = 1,
+  KatatuiConstraintKind_Min = 2,
+  KatatuiConstraintKind_Max = 3,
+  KatatuiConstraintKind_Fill = 4,
 } KatatuiConstraintKind;
 
 typedef enum KatatuiDirection {
-  Horizontal = 0,
-  Vertical = 1,
+  KatatuiDirection_Horizontal = 0,
+  KatatuiDirection_Vertical = 1,
 } KatatuiDirection;
+
+typedef enum KatatuiGraphType {
+  KatatuiGraphType_Scatter = 0,
+  KatatuiGraphType_Line = 1,
+  KatatuiGraphType_Bar = 2,
+} KatatuiGraphType;
+
+typedef enum KatatuiLogoSize {
+  KatatuiLogoSize_Tiny = 0,
+  KatatuiLogoSize_Small = 1,
+} KatatuiLogoSize;
+
+typedef enum KatatuiMarker {
+  KatatuiMarker_Dot = 0,
+  KatatuiMarker_Block = 1,
+  KatatuiMarker_Bar = 2,
+  KatatuiMarker_Braille = 3,
+  KatatuiMarker_HalfBlock = 4,
+  KatatuiMarker_Quadrant = 5,
+} KatatuiMarker;
+
+/**
+ * The mascot's eye state.  ratatui 0.30 `MascotEyeColor` only has `Default` and `Red`.
+ */
+typedef enum KatatuiMascotEyeColor {
+  KatatuiMascotEyeColor_Default = 0,
+  KatatuiMascotEyeColor_Red = 1,
+} KatatuiMascotEyeColor;
+
+typedef enum KatatuiScrollbarOrientation {
+  KatatuiScrollbarOrientation_VerticalRight = 0,
+  KatatuiScrollbarOrientation_VerticalLeft = 1,
+  KatatuiScrollbarOrientation_HorizontalBottom = 2,
+  KatatuiScrollbarOrientation_HorizontalTop = 3,
+} KatatuiScrollbarOrientation;
 
 typedef struct KatatuiBarChart KatatuiBarChart;
 
 typedef struct KatatuiBlock KatatuiBlock;
+
+typedef struct KatatuiCanvas KatatuiCanvas;
+
+typedef struct KatatuiChart KatatuiChart;
 
 typedef struct KatatuiClear KatatuiClear;
 
@@ -58,7 +97,25 @@ typedef struct KatatuiList KatatuiList;
 
 typedef struct KatatuiListState KatatuiListState;
 
+typedef struct KatatuiLogo KatatuiLogo;
+
+typedef struct KatatuiMascot KatatuiMascot;
+
 typedef struct KatatuiParagraph KatatuiParagraph;
+
+/**
+ * Opaque handle to a ratatui_image Picker.
+ * Must be created on the main thread (where terminal I/O is available) so that
+ * `Picker::from_query_stdio()` can detect the best image protocol.
+ */
+typedef struct KatatuiPicker KatatuiPicker;
+
+/**
+ * Symbols are stored as owned `String`; drop is automatic when the struct is freed.
+ */
+typedef struct KatatuiScrollbar KatatuiScrollbar;
+
+typedef struct KatatuiScrollbarState KatatuiScrollbarState;
 
 typedef struct KatatuiSparkline KatatuiSparkline;
 
@@ -85,6 +142,20 @@ typedef struct KatatuiStyle {
   bool underlined;
   bool dim;
   bool crossed_out;
+  /**
+   * RGB/Indexed payload — valid when fg == Rgb or Indexed respectively
+   */
+  uint8_t fg_r;
+  uint8_t fg_g;
+  uint8_t fg_b;
+  uint8_t fg_index;
+  /**
+   * RGB/Indexed payload — valid when bg == Rgb or Indexed respectively
+   */
+  uint8_t bg_r;
+  uint8_t bg_g;
+  uint8_t bg_b;
+  uint8_t bg_index;
 } KatatuiStyle;
 
 typedef struct KatatuiConstraint {
@@ -102,13 +173,7 @@ void katatui_table_state_free(struct KatatuiTableState *state);
 
 void katatui_table_state_select(struct KatatuiTableState *state, int32_t index);
 
-/**
- * `ratatui::init()` already enables raw mode + alternate screen.
- * This function exists for symmetry with the Kotlin API.
- */
-bool katatui_terminal_init(struct KatatuiTerminal *terminal);
-
-void katatui_terminal_restore(struct KatatuiTerminal *_terminal);
+void katatui_terminal_restore(struct KatatuiTerminal *terminal);
 
 struct KatatuiFrame *katatui_terminal_begin_draw(struct KatatuiTerminal *terminal);
 
@@ -166,14 +231,36 @@ void katatui_frame_render_image(struct KatatuiFrame *frame,
                                 struct KatatuiRect area,
                                 struct KatatuiImageState *state);
 
-bool katatui_event_poll(uint64_t timeout_ms);
+void katatui_frame_render_scrollbar(struct KatatuiFrame *frame,
+                                    struct KatatuiRect area,
+                                    const struct KatatuiScrollbar *sb,
+                                    struct KatatuiScrollbarState *state);
+
+void katatui_frame_render_chart(struct KatatuiFrame *frame,
+                                struct KatatuiRect area,
+                                const struct KatatuiChart *chart);
+
+void katatui_frame_render_canvas(struct KatatuiFrame *frame,
+                                 struct KatatuiRect area,
+                                 const struct KatatuiCanvas *canvas);
+
+void katatui_frame_render_logo(struct KatatuiFrame *frame,
+                               struct KatatuiRect area,
+                               const struct KatatuiLogo *logo);
+
+void katatui_frame_render_mascot(struct KatatuiFrame *frame,
+                                 struct KatatuiRect area,
+                                 const struct KatatuiMascot *mascot);
 
 /**
- * Returns the ASCII value of a key press, or a sentinel value for special keys.
- * Special keys: Up=0xF1, Down=0xF2, Left=0xF3, Right=0xF4, Enter=0x0D, Esc=0x1B
- * Returns 0 for non-key events or unrecognised keys.
+ * Blocking event read with tick timeout. Blocks until either a terminal event arrives or
+ * `timeout_ms` milliseconds elapse. Returns:
+ *   256 = Tick (timeout elapsed — no event within the interval)
+ *   1–255 = key code (ASCII char value; special keys: Backspace=0x08, Tab=0x09,
+ *           Enter=0x0D, Esc=0x1B, Up=0xF1, Down=0xF2, Left=0xF3, Right=0xF4)
+ *   0 = other/unknown event (real resize, mouse, paste, etc.)
  */
-uint8_t katatui_event_read_key_code(void);
+uint32_t katatui_event_read_extended(uint64_t timeout_ms);
 
 struct KatatuiBarChart *katatui_bar_chart_new(void);
 
@@ -203,6 +290,120 @@ void katatui_block_set_borders(struct KatatuiBlock *block, uint32_t borders);
 
 void katatui_block_set_style(struct KatatuiBlock *block, struct KatatuiStyle style);
 
+struct KatatuiCanvas *katatui_canvas_new(void);
+
+void katatui_canvas_free(struct KatatuiCanvas *canvas);
+
+/**
+ * Sets x-axis bounds.  Non-`set_` prefix so codegen skips it (double params).
+ */
+void katatui_canvas_x_bounds(struct KatatuiCanvas *canvas, double min, double max);
+
+/**
+ * Sets y-axis bounds.  Non-`set_` prefix so codegen skips it (double params).
+ */
+void katatui_canvas_y_bounds(struct KatatuiCanvas *canvas, double min, double max);
+
+void katatui_canvas_set_marker(struct KatatuiCanvas *canvas, enum KatatuiMarker marker);
+
+/**
+ * Clears all buffered drawing commands and resets the current-points batch state.
+ */
+void katatui_canvas_clear(struct KatatuiCanvas *canvas);
+
+/**
+ * Queues a circle.  Non-`set_`/`add_` prefix so codegen skips it.
+ */
+void katatui_canvas_circle(struct KatatuiCanvas *canvas,
+                           double x,
+                           double y,
+                           double radius,
+                           struct KatatuiStyle color);
+
+/**
+ * Queues a line.  Non-`set_`/`add_` prefix so codegen skips it.
+ */
+void katatui_canvas_line(struct KatatuiCanvas *canvas,
+                         double x1,
+                         double y1,
+                         double x2,
+                         double y2,
+                         struct KatatuiStyle color);
+
+/**
+ * Queues a rectangle.  Non-`set_`/`add_` prefix so codegen skips it.
+ */
+void katatui_canvas_rectangle(struct KatatuiCanvas *canvas,
+                              double x,
+                              double y,
+                              double width,
+                              double height,
+                              struct KatatuiStyle color);
+
+/**
+ * Begins a `Points` batch with the given color.
+ */
+void katatui_canvas_begin_points(struct KatatuiCanvas *canvas, struct KatatuiStyle color);
+
+/**
+ * Adds a point to the current `Points` batch.
+ * Non-`add_` prefix so codegen skips it.
+ */
+void katatui_canvas_point(struct KatatuiCanvas *canvas, double x, double y);
+
+/**
+ * Commits the current `Points` batch.  No-op if the batch is empty.
+ */
+void katatui_canvas_commit_points(struct KatatuiCanvas *canvas);
+
+struct KatatuiChart *katatui_chart_new(void);
+
+void katatui_chart_free(struct KatatuiChart *chart);
+
+void katatui_chart_set_dataset_name(struct KatatuiChart *chart, const char *name);
+
+void katatui_chart_set_dataset_graph_type(struct KatatuiChart *chart,
+                                          enum KatatuiGraphType graph_type);
+
+void katatui_chart_set_dataset_marker(struct KatatuiChart *chart, enum KatatuiMarker marker);
+
+void katatui_chart_set_dataset_style(struct KatatuiChart *chart, struct KatatuiStyle style);
+
+/**
+ * Adds a data point (x, y) to the current dataset being built.
+ * Uses non-`add_` prefix so codegen does not attempt to wrap this function.
+ */
+void katatui_chart_dataset_point(struct KatatuiChart *chart, double x, double y);
+
+/**
+ * Commits the current dataset into the chart's dataset list.
+ */
+void katatui_chart_commit_dataset(struct KatatuiChart *chart);
+
+void katatui_chart_set_x_title(struct KatatuiChart *chart, const char *title);
+
+/**
+ * Sets the x-axis bounds.  Uses non-`set_` prefix so codegen skips it (double params).
+ */
+void katatui_chart_x_bounds(struct KatatuiChart *chart, double min, double max);
+
+void katatui_chart_add_x_label(struct KatatuiChart *chart, const char *label);
+
+void katatui_chart_set_x_style(struct KatatuiChart *chart, struct KatatuiStyle style);
+
+void katatui_chart_set_y_title(struct KatatuiChart *chart, const char *title);
+
+/**
+ * Sets the y-axis bounds.  Uses non-`set_` prefix so codegen skips it (double params).
+ */
+void katatui_chart_y_bounds(struct KatatuiChart *chart, double min, double max);
+
+void katatui_chart_add_y_label(struct KatatuiChart *chart, const char *label);
+
+void katatui_chart_set_y_style(struct KatatuiChart *chart, struct KatatuiStyle style);
+
+void katatui_chart_set_style(struct KatatuiChart *chart, struct KatatuiStyle style);
+
 struct KatatuiClear *katatui_clear_new(void);
 
 void katatui_clear_free(struct KatatuiClear *clear);
@@ -218,6 +419,25 @@ void katatui_gauge_set_label(struct KatatuiGauge *gauge, const char *label);
 void katatui_gauge_set_style(struct KatatuiGauge *gauge, struct KatatuiStyle style);
 
 void katatui_gauge_set_gauge_style(struct KatatuiGauge *gauge, struct KatatuiStyle style);
+
+/**
+ * Creates a Picker by querying the terminal for the best image protocol.
+ * Falls back to half-block rendering if the query fails.
+ * Must be called from the main thread.
+ */
+struct KatatuiPicker *katatui_picker_new(void);
+
+void katatui_picker_free(struct KatatuiPicker *picker);
+
+/**
+ * Creates image state from in-memory bytes using a pre-created Picker.
+ * Safe to call from any thread as long as no other thread is concurrently
+ * accessing the same Picker.
+ * Returns null if the bytes cannot be decoded.
+ */
+struct KatatuiImageState *katatui_image_state_from_bytes_with_picker(const uint8_t *data,
+                                                                     uintptr_t len,
+                                                                     const struct KatatuiPicker *picker);
 
 /**
  * Creates image state from a file path.
@@ -244,7 +464,7 @@ void katatui_layout_add_constraint(struct KatatuiLayout *layout,
 /**
  * Splits the layout area into rects according to the constraints.
  * Returns the number of rects written into `out_rects`.
- * `out_rects` must point to a buffer of at least `constraints.len() + 1` elements.
+ * `out_rects` must point to a buffer of at least `constraints.len()` elements.
  */
 uint32_t katatui_layout_split(struct KatatuiLayout *layout,
                               struct KatatuiRect area,
@@ -272,6 +492,19 @@ void katatui_list_state_free(struct KatatuiListState *state);
 
 void katatui_list_state_select(struct KatatuiListState *state, int32_t index);
 
+struct KatatuiLogo *katatui_logo_new(void);
+
+void katatui_logo_free(struct KatatuiLogo *logo);
+
+void katatui_logo_set_size(struct KatatuiLogo *logo, enum KatatuiLogoSize size);
+
+struct KatatuiMascot *katatui_mascot_new(void);
+
+void katatui_mascot_free(struct KatatuiMascot *mascot);
+
+void katatui_mascot_set_eye_color(struct KatatuiMascot *mascot,
+                                  enum KatatuiMascotEyeColor eye_color);
+
 struct KatatuiParagraph *katatui_paragraph_new(const char *text);
 
 void katatui_paragraph_free(struct KatatuiParagraph *para);
@@ -281,6 +514,41 @@ void katatui_paragraph_set_style(struct KatatuiParagraph *para, struct KatatuiSt
 void katatui_paragraph_set_text(struct KatatuiParagraph *para, const char *text);
 
 void katatui_paragraph_set_wrap(struct KatatuiParagraph *para, bool wrap);
+
+struct KatatuiScrollbar *katatui_scrollbar_new(void);
+
+void katatui_scrollbar_free(struct KatatuiScrollbar *sb);
+
+void katatui_scrollbar_set_orientation(struct KatatuiScrollbar *sb,
+                                       enum KatatuiScrollbarOrientation orientation);
+
+void katatui_scrollbar_set_thumb_symbol(struct KatatuiScrollbar *sb, const char *sym);
+
+void katatui_scrollbar_set_track_symbol(struct KatatuiScrollbar *sb, const char *sym);
+
+void katatui_scrollbar_set_begin_symbol(struct KatatuiScrollbar *sb, const char *sym);
+
+void katatui_scrollbar_set_end_symbol(struct KatatuiScrollbar *sb, const char *sym);
+
+void katatui_scrollbar_set_thumb_style(struct KatatuiScrollbar *sb, struct KatatuiStyle style);
+
+void katatui_scrollbar_set_track_style(struct KatatuiScrollbar *sb, struct KatatuiStyle style);
+
+void katatui_scrollbar_set_begin_style(struct KatatuiScrollbar *sb, struct KatatuiStyle style);
+
+void katatui_scrollbar_set_end_style(struct KatatuiScrollbar *sb, struct KatatuiStyle style);
+
+struct KatatuiScrollbarState *katatui_scrollbar_state_new(void);
+
+void katatui_scrollbar_state_free(struct KatatuiScrollbarState *state);
+
+void katatui_scrollbar_state_set_content_length(struct KatatuiScrollbarState *state,
+                                                uint16_t length);
+
+void katatui_scrollbar_state_set_position(struct KatatuiScrollbarState *state, uint16_t position);
+
+void katatui_scrollbar_state_set_viewport_content_length(struct KatatuiScrollbarState *state,
+                                                         uint16_t length);
 
 struct KatatuiSparkline *katatui_sparkline_new(void);
 

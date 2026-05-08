@@ -44,6 +44,8 @@ pub extern "C" fn katatui_table_new() -> *mut KatatuiTable {
 #[no_mangle]
 pub extern "C" fn katatui_table_free(table: *mut KatatuiTable) {
     if !table.is_null() {
+        // SAFETY: `table` was returned by `katatui_table_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(table)) };
     }
 }
@@ -56,6 +58,8 @@ pub fn katatui_table_state_new() -> *mut KatatuiTableState {
 
 pub fn katatui_table_state_free(state: *mut KatatuiTableState) {
     if !state.is_null() {
+        // SAFETY: `state` was returned by `katatui_table_state_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(state)) };
     }
 }

@@ -3,15 +3,18 @@ pub mod types;
 pub mod widgets;
 
 use crossterm::event::{self, Event, KeyEventKind};
+use std::time::Duration;
 use terminal::{KatatuiFrame, KatatuiTerminal};
 use types::KatatuiRect;
 use widgets::{
     bar_chart::build_bar_chart,
     block::build_block,
+    chart::build_axis,
     clear::build_clear,
     gauge::build_gauge,
     line_gauge::build_line_gauge,
     list::build_list,
+    logo::{build_logo, build_mascot},
     paragraph::build_paragraph,
     sparkline::build_sparkline,
     table::build_table,
@@ -37,6 +40,8 @@ pub extern "C" fn katatui_terminal_new() -> *mut KatatuiTerminal {
 #[no_mangle]
 pub extern "C" fn katatui_terminal_free(terminal: *mut KatatuiTerminal) {
     if !terminal.is_null() {
+        // SAFETY: `terminal` was returned by `katatui_terminal_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(terminal)) };
     }
 }
@@ -57,13 +62,6 @@ pub extern "C" fn katatui_table_state_select(
     index: i32,
 ) {
     widgets::table::katatui_table_state_select(state, index);
-}
-
-/// `ratatui::init()` already enables raw mode + alternate screen.
-/// This function exists for symmetry with the Kotlin API.
-#[no_mangle]
-pub extern "C" fn katatui_terminal_init(terminal: *mut KatatuiTerminal) -> bool {
-    !terminal.is_null()
 }
 
 #[no_mangle]
@@ -105,8 +103,13 @@ pub extern "C" fn katatui_terminal_end_draw(terminal: *mut KatatuiTerminal) {
     }
     let t = unsafe { &mut *terminal };
     if let Some(frame_ptr) = t.current_frame.take() {
+        // SAFETY: `frame_ptr` was allocated by `katatui_terminal_begin_draw()` and is
+        // consumed exactly once here; `t.current_frame.take()` ensures single consumption.
         let frame = unsafe { Box::from_raw(frame_ptr) };
         let ops = frame.ops;
+        // TODO: `Terminal::draw()` returns `io::Result`; errors (broken pipe, closed terminal)
+        // are silently discarded here. Surfacing them requires a return value from this
+        // function and a corresponding update to the Kotlin `draw()` wrapper.
         let _ = t.inner.draw(|rf| {
             for op in ops {
                 op(rf);
@@ -312,32 +315,226 @@ pub extern "C" fn katatui_frame_render_image(
     unsafe { (*frame).ops.push(op) };
 }
 
-// ---- Events ----
-
 #[no_mangle]
-pub extern "C" fn katatui_event_poll(timeout_ms: u64) -> bool {
-    event::poll(std::time::Duration::from_millis(timeout_ms)).unwrap_or(false)
+pub extern "C" fn katatui_frame_render_scrollbar(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    sb: *const widgets::scrollbar::KatatuiScrollbar,
+    state: *mut widgets::scrollbar::KatatuiScrollbarState,
+) {
+    if frame.is_null() || sb.is_null() || state.is_null() {
+        return;
+    }
+    // Clone all scrollbar fields into locals so the closure can be 'static.
+    let s = unsafe { &*sb };
+    let orientation = s.orientation;
+    let thumb_sym = s.thumb_symbol.clone();
+    let track_sym = s.track_symbol.clone();
+    let begin_sym = s.begin_symbol.clone();
+    let end_sym = s.end_symbol.clone();
+    let thumb_style = s.thumb_style;
+    let track_style = s.track_style;
+    let begin_style = s.begin_style;
+    let end_style = s.end_style;
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        use ratatui::widgets::Scrollbar;
+        // Borrow &str from the owned Strings within the closure scope.
+        let thumb_s = thumb_sym.as_deref();
+        let track_s = track_sym.as_deref();
+        let begin_s = begin_sym.as_deref();
+        let end_s = end_sym.as_deref();
+        let mut widget: Scrollbar<'_> = Scrollbar::new(orientation.into());
+        if let Some(s) = thumb_s {
+            widget = widget.thumb_symbol(s);
+        }
+        if let Some(s) = track_s {
+            widget = widget.track_symbol(Some(s));
+        }
+        if let Some(s) = begin_s {
+            widget = widget.begin_symbol(Some(s));
+        }
+        if let Some(s) = end_s {
+            widget = widget.end_symbol(Some(s));
+        }
+        if let Some(style) = thumb_style {
+            widget = widget.thumb_style(ratatui::style::Style::from(style));
+        }
+        if let Some(style) = track_style {
+            widget = widget.track_style(ratatui::style::Style::from(style));
+        }
+        if let Some(style) = begin_style {
+            widget = widget.begin_style(ratatui::style::Style::from(style));
+        }
+        if let Some(style) = end_style {
+            widget = widget.end_style(ratatui::style::Style::from(style));
+        }
+        // SAFETY: `state` must remain valid for the duration of the draw call
+        // (between begin_draw and end_draw). The Kotlin wrapper guarantees this
+        // because ScrollbarState outlives the draw closure — it is only freed
+        // after the Frame is consumed.
+        rf.render_stateful_widget(widget, area.into(), &mut unsafe { &mut *state }.inner);
+    });
+    unsafe { (*frame).ops.push(op) };
 }
 
-/// Returns the ASCII value of a key press, or a sentinel value for special keys.
-/// Special keys: Up=0xF1, Down=0xF2, Left=0xF3, Right=0xF4, Enter=0x0D, Esc=0x1B
-/// Returns 0 for non-key events or unrecognised keys.
 #[no_mangle]
-pub extern "C" fn katatui_event_read_key_code() -> u8 {
-    match event::read() {
-        Ok(Event::Key(key_event)) if key_event.kind == KeyEventKind::Press => {
-            use crossterm::event::KeyCode;
-            match key_event.code {
-                KeyCode::Char(c) if (c as u32) < 128 => c as u8,
-                KeyCode::Enter => b'\r',
-                KeyCode::Esc => 0x1B,
-                KeyCode::Up => 0xF1,
-                KeyCode::Down => 0xF2,
-                KeyCode::Left => 0xF3,
-                KeyCode::Right => 0xF4,
-                _ => 0,
-            }
+pub extern "C" fn katatui_frame_render_chart(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    chart: *const widgets::chart::KatatuiChart,
+) {
+    if frame.is_null() || chart.is_null() {
+        return;
+    }
+    // Clone all chart data into owned structures so the closure is 'static.
+    let c = unsafe { &*chart };
+    let datasets = c.datasets.clone();
+    let x_axis_data = c.x_axis.clone();
+    let y_axis_data = c.y_axis.clone();
+    let chart_style = c.style;
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        use ratatui::widgets::{Chart, Dataset};
+        let ds_built: Vec<Dataset<'_>> = datasets
+            .iter()
+            .map(|d| {
+                let mut ds = Dataset::default()
+                    .name(d.name.clone())
+                    .data(d.data.as_slice())
+                    .marker(d.marker.into())
+                    .graph_type(d.graph_type.into());
+                if let Some(style) = d.style {
+                    ds = ds.style(ratatui::style::Style::from(style));
+                }
+                ds
+            })
+            .collect();
+        let x_axis = build_axis(&x_axis_data);
+        let y_axis = build_axis(&y_axis_data);
+        let mut widget = Chart::new(ds_built).x_axis(x_axis).y_axis(y_axis);
+        if let Some(s) = chart_style {
+            widget = widget.style(ratatui::style::Style::from(s));
         }
-        _ => 0,
+        rf.render_widget(widget, area.into());
+    });
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_canvas(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    canvas: *const widgets::canvas::KatatuiCanvas,
+) {
+    if frame.is_null() || canvas.is_null() {
+        return;
+    }
+    let c = unsafe { &*canvas };
+    let commands = c.commands.clone();
+    let x_bounds = [c.x_bounds_min, c.x_bounds_max];
+    let y_bounds = [c.y_bounds_min, c.y_bounds_max];
+    let marker = c.marker;
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> = Box::new(move |rf| {
+        use ratatui::widgets::canvas::{Canvas, Circle, Line as CanvasLine, Points, Rectangle};
+        use widgets::canvas::CanvasCmd;
+        let widget = Canvas::default()
+            .x_bounds(x_bounds)
+            .y_bounds(y_bounds)
+            .marker(marker.into())
+            .paint(move |ctx| {
+                for cmd in &commands {
+                    match cmd {
+                        CanvasCmd::Circle { x, y, radius, color } => {
+                            ctx.draw(&Circle { x: *x, y: *y, radius: *radius, color: *color });
+                        }
+                        CanvasCmd::Line { x1, y1, x2, y2, color } => {
+                            ctx.draw(&CanvasLine {
+                                x1: *x1,
+                                y1: *y1,
+                                x2: *x2,
+                                y2: *y2,
+                                color: *color,
+                            });
+                        }
+                        CanvasCmd::Rectangle { x, y, width, height, color } => {
+                            ctx.draw(&Rectangle {
+                                x: *x,
+                                y: *y,
+                                width: *width,
+                                height: *height,
+                                color: *color,
+                            });
+                        }
+                        CanvasCmd::Points { coords, color } => {
+                            ctx.draw(&Points { coords: coords.as_slice(), color: *color });
+                        }
+                    }
+                }
+            });
+        rf.render_widget(widget, area.into());
+    });
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_logo(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    logo: *const widgets::logo::KatatuiLogo,
+) {
+    if frame.is_null() || logo.is_null() {
+        return;
+    }
+    let widget = build_logo(unsafe { &*logo });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+#[no_mangle]
+pub extern "C" fn katatui_frame_render_mascot(
+    frame: *mut KatatuiFrame,
+    area: KatatuiRect,
+    mascot: *const widgets::logo::KatatuiMascot,
+) {
+    if frame.is_null() || mascot.is_null() {
+        return;
+    }
+    let widget = build_mascot(unsafe { &*mascot });
+    let op: Box<dyn for<'a> FnOnce(&mut ratatui::Frame<'a>)> =
+        Box::new(move |rf| rf.render_widget(widget, area.into()));
+    unsafe { (*frame).ops.push(op) };
+}
+
+// ---- Events ----
+
+/// Blocking event read with tick timeout. Blocks until either a terminal event arrives or
+/// `timeout_ms` milliseconds elapse. Returns:
+///   256 = Tick (timeout elapsed — no event within the interval)
+///   1–255 = key code (ASCII char value; special keys: Backspace=0x08, Tab=0x09,
+///           Enter=0x0D, Esc=0x1B, Up=0xF1, Down=0xF2, Left=0xF3, Right=0xF4)
+///   0 = other/unknown event (real resize, mouse, paste, etc.)
+#[no_mangle]
+pub extern "C" fn katatui_event_read_extended(timeout_ms: u64) -> u32 {
+    match event::poll(Duration::from_millis(timeout_ms)) {
+        Ok(true) => match event::read() {
+            Ok(Event::Key(k)) if k.kind == KeyEventKind::Press => {
+                use crossterm::event::KeyCode;
+                let code: u8 = match k.code {
+                    KeyCode::Char(c) if (c as u32) < 128 => c as u8,
+                    KeyCode::Backspace => 0x08,
+                    KeyCode::Tab => 0x09,
+                    KeyCode::Enter => b'\r',
+                    KeyCode::Esc => 0x1B,
+                    KeyCode::Up => 0xF1,
+                    KeyCode::Down => 0xF2,
+                    KeyCode::Left => 0xF3,
+                    KeyCode::Right => 0xF4,
+                    _ => 0,
+                };
+                code as u32
+            }
+            _ => 0,
+        },
+        _ => 256, // timeout = Tick
     }
 }

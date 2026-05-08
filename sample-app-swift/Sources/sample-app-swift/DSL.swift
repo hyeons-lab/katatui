@@ -63,15 +63,7 @@ extension Frame {
 // --- Event DSL ---
 
 public enum Event {
-    public static func poll(timeoutMillis: Int64 = 100) -> Bool {
-        return EventKt.poll(timeout: timeoutMillis)
-    }
-    
-    public static func readKey() -> Character? {
-        guard let char = EventKt.readKey() else { return nil }
-        // SKIE bridges Kotlin Char to a wrapper or Character?
-        // Let's see if we can just cast it or if it's a specific type.
-        // Assuming SKIE bridges Char to Character or similar.
-        return char as? Character
+    public static func readEvent(timeoutMs: Int64 = 100) -> TerminalEvent {
+        return EventKt.readEvent(timeoutMs: timeoutMs)
     }
 }

@@ -22,6 +22,8 @@ pub extern "C" fn katatui_list_new() -> *mut KatatuiList {
 #[no_mangle]
 pub extern "C" fn katatui_list_free(list: *mut KatatuiList) {
     if !list.is_null() {
+        // SAFETY: `list` was returned by `katatui_list_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(list)) };
     }
 }
@@ -45,6 +47,8 @@ pub extern "C" fn katatui_list_state_new() -> *mut KatatuiListState {
 #[no_mangle]
 pub extern "C" fn katatui_list_state_free(state: *mut KatatuiListState) {
     if !state.is_null() {
+        // SAFETY: `state` was returned by `katatui_list_state_new()`, has not been freed
+        // before, and the caller holds exclusive ownership.
         unsafe { drop(Box::from_raw(state)) };
     }
 }

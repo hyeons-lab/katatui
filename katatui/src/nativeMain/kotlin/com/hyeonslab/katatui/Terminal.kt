@@ -6,7 +6,6 @@ import cnames.structs.KatatuiTerminal
 import com.hyeonslab.katatui.cinterop.katatui_terminal_begin_draw
 import com.hyeonslab.katatui.cinterop.katatui_terminal_end_draw
 import com.hyeonslab.katatui.cinterop.katatui_terminal_free
-import com.hyeonslab.katatui.cinterop.katatui_terminal_init
 import com.hyeonslab.katatui.cinterop.katatui_terminal_new
 import com.hyeonslab.katatui.cinterop.katatui_terminal_restore
 import kotlinx.cinterop.CPointer
@@ -15,10 +14,6 @@ import kotlinx.cinterop.ExperimentalForeignApi
 class Terminal : AutoCloseable {
   internal val ptr: CPointer<KatatuiTerminal> =
     checkNotNull(katatui_terminal_new()) { "katatui_terminal_new() returned null" }
-
-  init {
-    katatui_terminal_init(ptr)
-  }
 
   override fun close() {
     try {
