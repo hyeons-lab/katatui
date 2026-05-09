@@ -5,6 +5,7 @@ kotest     = "6.1.3"
 kotlin     = "2.3.10"
 kotlinpoet = "2.2.0"
 ktfmt      = "0.25.0"
+maven-publish = "0.30.0"
 skie       = "0.10.10"
 
 [libraries]
@@ -19,3 +20,4 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 kotlin-jvm           = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktfmt                = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 skie                 = { id = "co.touchlab.skie", version.ref = "skie" }
+maven-publish        = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }

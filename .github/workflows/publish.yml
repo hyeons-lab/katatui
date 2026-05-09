@@ -1,0 +1,55 @@
+name: Publish to Maven Central
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            rust-targets: aarch64-apple-darwin, x86_64-apple-darwin
+          - os: ubuntu-latest
+            rust-targets: x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu
+          - os: windows-latest
+            rust-targets: x86_64-pc-windows-gnu
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - name: Install Linux Cross-compilers
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Publish to Maven Central
+        shell: bash
+        run: |
+          # The vanniktech plugin handles the multi-platform upload.
+          # We run on each OS to ensure the native binaries are built and uploaded.
+          ./gradlew :katatui:publishAllPublicationsToMavenCentral --no-configuration-cache
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEYPASSWORD }}

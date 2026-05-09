@@ -7,12 +7,44 @@ plugins {
   id("katatui-quality")
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.skie)
-  `maven-publish`
+  alias(libs.plugins.maven.publish)
 }
 
 group = providers.gradleProperty("GROUP").get()
 
 version = providers.gradleProperty("VERSION_NAME").get()
+
+mavenPublishing {
+  coordinates(project.group.toString(), "katatui", project.version.toString())
+
+  pom {
+    name.set("Katatui")
+    description.set("Kotlin Multiplatform bindings for Ratatui")
+    inceptionYear.set("2026")
+    url.set("https://github.com/hyeons-lab/katatui")
+    licenses {
+      license {
+        name.set("MIT")
+        url.set("https://opensource.org/licenses/MIT")
+      }
+    }
+    developers {
+      developer {
+        id.set("hyeonslab")
+        name.set("Hyeons Lab")
+        url.set("https://github.com/hyeons-lab")
+      }
+    }
+    scm {
+      url.set("https://github.com/hyeons-lab/katatui")
+      connection.set("scm:git:github.com/hyeons-lab/katatui.git")
+      developerConnection.set("scm:git:ssh://github.com/hyeons-lab/katatui.git")
+    }
+  }
+
+  publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+  signAllPublications()
+}
 
 // Proper configuration for accessing :codegen's runtime classpath.
 // Declared here (not inline in the task) so Gradle's configuration cache can serialize it.
