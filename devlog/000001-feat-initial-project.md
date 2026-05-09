@@ -265,6 +265,7 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 2026-05-08T18:42-0700 .github/workflows/publish.yml — renamed `MAVEN_CENTRAL_USERNAME`/`MAVEN_CENTRAL_PASSWORD` env vars to `ORG_GRADLE_PROJECT_mavenCentralUsername`/`ORG_GRADLE_PROJECT_mavenCentralPassword`; vanniktech reads credentials from Gradle properties named `mavenCentralUsername`/`mavenCentralPassword`, and the `ORG_GRADLE_PROJECT_*` prefix is the standard CI bridge — direct `MAVEN_CENTRAL_*` env vars are version-dependent and not documented for our setup
 2026-05-08T18:42-0700 sample-app-swift/Package.swift — removed dead `rustLibDir` arch-conditional declaration; it was previously consumed by `linkerSettings`, which were removed when the Rust static library was bundled into the XCFramework
 2026-05-08T18:50-0700 katatui/build.gradle.kts — removed explicit `coordinates(...)` call from `mavenPublishing { }` block; vanniktech-maven-publish auto-finalizes `groupId` from `GROUP` in gradle.properties as soon as the plugin is applied, so calling `coordinates()` afterward fails with "property 'groupId$plugin' is final and cannot be changed any further". Defaults (`project.group` / `project.name` / `project.version`) already resolve to `com.hyeonslab` / `katatui` / `0.1.0-SNAPSHOT`. All five CI jobs failed on this until removed.
+2026-05-08T19:01-0700 .github/workflows/ci.yml — added `x86_64-apple-darwin` to the Smoke Test job's Rust toolchain targets (was arm64-only). The smoke test runs `buildSwiftSample` which assembles the XCFramework, and the XCFramework includes both arm64 and x64 frameworks → both Rust static libs need to build. Apple Targets job already had both; smoke test had drifted.
 
 ## Decisions
 
@@ -477,4 +478,5 @@ e7435d2 — fix: address remaining PR comments (non-nullable Key, pre-wrap scrol
 99529b6 — fix: bundle Rust static library in klib and XCFramework
 476c9c2 — chore: configure maven publishing to central portal
 86b3f73 — fix: address PR #3 review (publish env var names, remove dead Swift rustLibDir)
-HEAD — fix: drop explicit coordinates() call in mavenPublishing (groupId already finalized)
+dbc29d9 — fix: drop explicit coordinates() call in mavenPublishing (groupId already finalized)
+HEAD — fix: install x86_64-apple-darwin Rust target in Smoke Test job (XCFramework needs both)
