@@ -15,8 +15,6 @@ group = providers.gradleProperty("GROUP").get()
 version = providers.gradleProperty("VERSION_NAME").get()
 
 mavenPublishing {
-  coordinates(project.group.toString(), "katatui", project.version.toString())
-
   pom {
     name.set("Katatui")
     description.set("Kotlin Multiplatform bindings for Ratatui")
