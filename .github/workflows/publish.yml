@@ -5,18 +5,9 @@ on:
 
 jobs:
   publish:
-    name: Publish (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-26
-            rust-targets: aarch64-apple-darwin, x86_64-apple-darwin
-          - os: ubuntu-24.04
-            rust-targets: x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu
-          - os: windows-2025
-            rust-targets: x86_64-pc-windows-gnu
+    name: Publish (all targets, cross-compiled on macOS)
+    runs-on: macos-26
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -34,22 +25,31 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.rust-targets }}
+          targets: aarch64-apple-darwin, x86_64-apple-darwin, x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, x86_64-pc-windows-gnu
 
-      - name: Install Linux Cross-compilers
-        if: matrix.os == 'ubuntu-24.04'
+      # Cross-compile linkers for the non-Apple targets. messense/macos-cross-toolchains
+      # provides GCC for the Linux GNU triples; mingw-w64 provides x86_64-w64-mingw32-gcc.
+      - name: Install cross-compile linkers
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          brew tap messense/macos-cross-toolchains
+          brew install x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu mingw-w64
 
       - name: Publish to Maven Central
         shell: bash
         run: |
-          # The vanniktech plugin handles the multi-platform upload.
-          # We run on each OS to ensure the native binaries are built and uploaded.
-          ./gradlew :katatui:publishAllPublicationsToMavenCentral --no-configuration-cache
+          # crossCompile=true builds Rust static libs for every target on this single Mac runner,
+          # so a single publishAllPublicationsToMavenCentral invocation produces a complete root
+          # Gradle metadata (.module) listing all 5 variants. Multi-runner publishing would
+          # overwrite the root each time and lose variants.
+          ./gradlew :katatui:publishAllPublicationsToMavenCentral \
+            -PcrossCompile=true \
+            --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.ORG_GRADLE_PROJECT_MAVENCENTRALUSERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.ORG_GRADLE_PROJECT_MAVENCENTRALPASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ORG_GRADLE_PROJECT_SIGNINGINMEMORYKEYPASSWORD }}
+          # Override config.toml linkers with the brew-installed messense names on the Mac runner.
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: x86_64-unknown-linux-gnu-gcc
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-unknown-linux-gnu-gcc
+          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc

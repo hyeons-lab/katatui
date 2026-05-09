@@ -71,11 +71,14 @@ val rustTriples =
 
 val isWindows = System.getProperty("os.name").startsWith("Windows")
 
-// One cargo build task per target (release static lib).
+// Set -PcrossCompile=true to enable building Rust static libs for *all* targets on the current
+// host (the Mac publish runner uses this — see .github/workflows/publish.yml). Without it, only
+// the host's native target builds, matching the typical local-dev workflow.
+val crossCompile = providers.gradleProperty("crossCompile").orElse("false").get().toBoolean()
 
+// One cargo build task per target (release static lib).
+//
 // isEnabled is a simple Boolean property (not a lambda), which is configuration-cache safe.
-// Cross-compilation requires toolchains not present in a typical dev setup, so we skip
-// foreign targets locally; CI can enable them by providing the right toolchain.
 rustTriples.forEach { (kotlinTarget, triple) ->
   val isNativeTarget =
     when {
@@ -91,7 +94,7 @@ rustTriples.forEach { (kotlinTarget, triple) ->
     outputs.file("../katatui-ffi/target/$triple/release/libkatatui_ffi.a")
     inputs.dir("../katatui-ffi/src")
     inputs.file("../katatui-ffi/Cargo.toml")
-    isEnabled = isNativeTarget
+    isEnabled = isNativeTarget || crossCompile
   }
 }
 
@@ -132,15 +135,21 @@ val generateKotlinWrappers by
     outputs.dir(generatedSourcesDir)
   }
 
+// Targets are declared based on what this host can build. With -PcrossCompile=true, all five
+// are declared so a single Mac runner can publish a complete root Gradle metadata (.module)
+// listing every variant. Without it, only the host's native targets are declared — keeps
+// per-platform CI builds and local dev fast and free of unbuildable foreign-target tasks.
 kotlin {
-  if (isMac) {
+  if (isMac || crossCompile) {
     macosArm64()
     macosX64()
-  } else if (isWindows) {
-    mingwX64()
-  } else {
+  }
+  if (!isMac && !isWindows || crossCompile) {
     linuxX64()
     linuxArm64()
+  }
+  if (isWindows || crossCompile) {
+    mingwX64()
   }
   applyDefaultHierarchyTemplate()
 
@@ -162,7 +171,7 @@ kotlin {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }
     }
-    if (isMac) {
+    if (this.name.startsWith("macos")) {
       binaries.framework {
         baseName = "Katatui"
         isStatic = true
