@@ -181,3 +181,51 @@ jobs:
           ./gradlew :katatui:compileKotlinMingwX64 \
             :sample-app:compileKotlinMingwX64 \
             --configuration-cache
+
+  smoke-test:
+    name: Smoke Test (Linkage)
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Get Kotlin version
+        id: kotlin-version
+        run: |
+          KOTLIN=$(grep '^kotlin ' gradle/libs.versions.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$KOTLIN" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ steps.kotlin-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+
+      - name: Verify Bundled Linkage (Kotlin & Swift)
+        run: |
+          # This specifically tests that the klib and XCFramework bundle the Rust static lib.
+          # If they don't, these link tasks will fail because we removed explicit -lkatatui_ffi
+          # from the sample app build scripts.
+          ./gradlew :sample-app:linkReleaseExecutableMacosArm64 \
+            buildSwiftSample \
+            --configuration-cache

@@ -261,6 +261,12 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 2026-02-28T20:55-0800 katatui/src/nativeMain/kotlin/com/hyeonslab/katatui/Rect.kt — clamp `x + 1` and `y + 1` in `inner()` to `UShort.MAX_VALUE` via `coerceAtMost` before converting back to `UShort`; without the clamp a rect at x=65535 would overflow and wrap to 0
 2026-02-28T20:55-0800 sample-app/src/nativeMain/kotlin/com/hyeonslab/katatui/sample/renderKatatuiCode.kt — coerce `totalLines` and `clampedOffset` to `0..65535` before assigning to `ScrollbarState`; the state's setters call `require(value in 0..65535)` and would throw for large documents
 
+**Session 31 — PR #3 review fixes (publish workflow + dead Swift code):**
+2026-05-08T18:42-0700 .github/workflows/publish.yml — renamed `MAVEN_CENTRAL_USERNAME`/`MAVEN_CENTRAL_PASSWORD` env vars to `ORG_GRADLE_PROJECT_mavenCentralUsername`/`ORG_GRADLE_PROJECT_mavenCentralPassword`; vanniktech reads credentials from Gradle properties named `mavenCentralUsername`/`mavenCentralPassword`, and the `ORG_GRADLE_PROJECT_*` prefix is the standard CI bridge — direct `MAVEN_CENTRAL_*` env vars are version-dependent and not documented for our setup
+2026-05-08T18:42-0700 sample-app-swift/Package.swift — removed dead `rustLibDir` arch-conditional declaration; it was previously consumed by `linkerSettings`, which were removed when the Rust static library was bundled into the XCFramework
+2026-05-08T18:50-0700 katatui/build.gradle.kts — removed explicit `coordinates(...)` call from `mavenPublishing { }` block; vanniktech-maven-publish auto-finalizes `groupId` from `GROUP` in gradle.properties as soon as the plugin is applied, so calling `coordinates()` afterward fails with "property 'groupId$plugin' is final and cannot be changed any further". Defaults (`project.group` / `project.name` / `project.version`) already resolve to `com.hyeonslab` / `katatui` / `0.1.0-SNAPSHOT`. All five CI jobs failed on this until removed.
+2026-05-08T19:01-0700 .github/workflows/ci.yml — added `x86_64-apple-darwin` to the Smoke Test job's Rust toolchain targets (was arm64-only). The smoke test runs `buildSwiftSample` which assembles the XCFramework, and the XCFramework includes both arm64 and x64 frameworks → both Rust static libs need to build. Apple Targets job already had both; smoke test had drifted.
+
 ## Decisions
 
 2026-02-25T20:58-0800 Mirrored prism build conventions — same build-logic pattern, version catalog, ktfmt+detekt quality plugin; ensures consistency and familiarity
@@ -380,7 +386,7 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 
 **Frame.() -> Unit vs Function2:** draw { frame -> … } creates a value parameter lambda, not a receiver lambda. Must use bare { … } block with implicit `this`.
 
-**linkerOpts not propagated:** Kotlin/Native does not forward a library's linkerOpts to consuming executables. Must duplicate -L/-lkatatui_ffi in sample-app/build.gradle.kts.
+**linkerOpts not propagated (Resolved):** Kotlin/Native does not forward a library's `linkerOpts` to consuming executables by default. This was resolved by declaring `staticLibraries = libkatatui_ffi.a` in `katatui.def` and providing the `-libraryPath` to the `cinterop` task. The produced `klib` now bundles the Rust static library, so downstream consumers (like `sample-app`, `sample-app-swift`, and `leap-cli`) no longer need explicit linker flags for the Rust FFI.
 
 **Stale release lib:** After Rust source change and debug rebuild only, the release .a file retained the old layout_split symbol. Resolved by cargo build --release.
 
@@ -468,4 +474,9 @@ f07d37e — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY com
 b495dd3 — fix: all four pre-existing CI failures (lint task, Windows shell, Linux cross-linker, Swift SKIE)
 e569cc8 — fix: buildKatatuiFfiHeader uses wrong host triple on Windows
 b272dd9 — fix: address PR comments (Event validation, Rect clamp, ScrollbarState coerce)
-HEAD — fix: address remaining PR comments (non-nullable Key, pre-wrap scroll, viewportContentLength coerce)
+e7435d2 — fix: address remaining PR comments (non-nullable Key, pre-wrap scroll, viewportContentLength coerce)
+99529b6 — fix: bundle Rust static library in klib and XCFramework
+476c9c2 — chore: configure maven publishing to central portal
+86b3f73 — fix: address PR #3 review (publish env var names, remove dead Swift rustLibDir)
+dbc29d9 — fix: drop explicit coordinates() call in mavenPublishing (groupId already finalized)
+HEAD — fix: install x86_64-apple-darwin Rust target in Smoke Test job (XCFramework needs both)

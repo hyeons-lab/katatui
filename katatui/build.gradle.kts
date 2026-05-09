@@ -7,12 +7,42 @@ plugins {
   id("katatui-quality")
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.skie)
-  `maven-publish`
+  alias(libs.plugins.maven.publish)
 }
 
 group = providers.gradleProperty("GROUP").get()
 
 version = providers.gradleProperty("VERSION_NAME").get()
+
+mavenPublishing {
+  pom {
+    name.set("Katatui")
+    description.set("Kotlin Multiplatform bindings for Ratatui")
+    inceptionYear.set("2026")
+    url.set("https://github.com/hyeons-lab/katatui")
+    licenses {
+      license {
+        name.set("MIT")
+        url.set("https://opensource.org/licenses/MIT")
+      }
+    }
+    developers {
+      developer {
+        id.set("hyeonslab")
+        name.set("Hyeons Lab")
+        url.set("https://github.com/hyeons-lab")
+      }
+    }
+    scm {
+      url.set("https://github.com/hyeons-lab/katatui")
+      connection.set("scm:git:github.com/hyeons-lab/katatui.git")
+      developerConnection.set("scm:git:ssh://github.com/hyeons-lab/katatui.git")
+    }
+  }
+
+  publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+  signAllPublications()
+}
 
 // Proper configuration for accessing :codegen's runtime classpath.
 // Declared here (not inline in the task) so Gradle's configuration cache can serialize it.
@@ -124,12 +154,10 @@ kotlin {
       cinterops.create("katatui") {
         definitionFile.set(project.file("src/nativeInterop/cinterop/katatui.def"))
         includeDirs(project.file("src/nativeInterop/cinterop"))
+        extraOpts("-libraryPath", "${rootDir}/katatui-ffi/target/$triple/release")
       }
     }
     binaries.all {
-      // Always links against release: the Rust build task only produces a release static lib.
-      // Run `./gradlew buildKatatuiFfi_<target>` (cargo --release) to satisfy this path.
-      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/release", "-lkatatui_ffi")
       if (name.contains("mingw", ignoreCase = true)) {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }

@@ -14,6 +14,19 @@ katatui-ffi/target/
 .idea/
 *.iml
 .DS_Store
+.claude/
+.junie/
+
+# Environment
+.env
+sample-app-swift/.env
+
+# Kotlin/Native
+*.klib
+.kotlin/
+
+# Swift
+sample-app-swift/.build/
 
 # Worktrees
 worktrees/
