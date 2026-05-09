@@ -124,12 +124,10 @@ kotlin {
       cinterops.create("katatui") {
         definitionFile.set(project.file("src/nativeInterop/cinterop/katatui.def"))
         includeDirs(project.file("src/nativeInterop/cinterop"))
+        extraOpts("-libraryPath", "${rootDir}/katatui-ffi/target/$triple/release")
       }
     }
     binaries.all {
-      // Always links against release: the Rust build task only produces a release static lib.
-      // Run `./gradlew buildKatatuiFfi_<target>` (cargo --release) to satisfy this path.
-      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/release", "-lkatatui_ffi")
       if (name.contains("mingw", ignoreCase = true)) {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }

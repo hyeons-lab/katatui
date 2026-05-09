@@ -1,3 +1,4 @@
 headers      = katatui.h
 headerFilter = katatui.h
 package      = com.hyeonslab.katatui.cinterop
+staticLibraries = libkatatui_ffi.a

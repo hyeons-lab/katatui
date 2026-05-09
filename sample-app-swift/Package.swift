@@ -13,10 +13,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "sample-app-swift",
-            dependencies: ["Katatui"],
-            linkerSettings: [
-                .unsafeFlags([rustLibDir, "-lkatatui_ffi"])
-            ]
+            dependencies: ["Katatui"]
         ),
         .binaryTarget(
             name: "Katatui",

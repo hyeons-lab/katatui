@@ -380,7 +380,7 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 
 **Frame.() -> Unit vs Function2:** draw { frame -> … } creates a value parameter lambda, not a receiver lambda. Must use bare { … } block with implicit `this`.
 
-**linkerOpts not propagated:** Kotlin/Native does not forward a library's linkerOpts to consuming executables. Must duplicate -L/-lkatatui_ffi in sample-app/build.gradle.kts.
+**linkerOpts not propagated (Resolved):** Kotlin/Native does not forward a library's `linkerOpts` to consuming executables by default. This was resolved by declaring `staticLibraries = libkatatui_ffi.a` in `katatui.def` and providing the `-libraryPath` to the `cinterop` task. The produced `klib` now bundles the Rust static library, so downstream consumers (like `sample-app`, `sample-app-swift`, and `leap-cli`) no longer need explicit linker flags for the Rust FFI.
 
 **Stale release lib:** After Rust source change and debug rebuild only, the release .a file retained the old layout_split symbol. Resolved by cargo build --release.
 

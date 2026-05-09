@@ -83,7 +83,6 @@ kotlin {
   targets.withType<KotlinNativeTarget>().configureEach {
     val triple = rustTriples[name] ?: return@configureEach
     binaries.all {
-      linkerOpts("-L${rootDir}/katatui-ffi/target/$triple/release", "-lkatatui_ffi")
       if (name.contains("mingw", ignoreCase = true)) {
         linkerOpts("-lws2_32", "-lbcrypt", "-lntdll", "-luserenv")
       }
