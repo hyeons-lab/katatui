@@ -15,7 +15,7 @@ permissions:
 jobs:
   lint:
     name: Lint & Quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     steps:
@@ -39,7 +39,7 @@ jobs:
 
   apple:
     name: Apple Targets
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
 
     steps:
@@ -86,7 +86,7 @@ jobs:
 
   linux:
     name: Linux Targets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     steps:
@@ -137,7 +137,7 @@ jobs:
 
   windows:
     name: Windows Targets
-    runs-on: windows-latest
+    runs-on: windows-2025
     timeout-minutes: 45
 
     steps:
@@ -184,7 +184,7 @@ jobs:
 
   smoke-test:
     name: Smoke Test (Linkage)
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 30
 
     steps:
