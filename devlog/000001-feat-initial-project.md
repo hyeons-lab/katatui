@@ -261,6 +261,10 @@ Create the initial Katatui project: a Kotlin Multiplatform Native library that w
 2026-02-28T20:55-0800 katatui/src/nativeMain/kotlin/com/hyeonslab/katatui/Rect.kt — clamp `x + 1` and `y + 1` in `inner()` to `UShort.MAX_VALUE` via `coerceAtMost` before converting back to `UShort`; without the clamp a rect at x=65535 would overflow and wrap to 0
 2026-02-28T20:55-0800 sample-app/src/nativeMain/kotlin/com/hyeonslab/katatui/sample/renderKatatuiCode.kt — coerce `totalLines` and `clampedOffset` to `0..65535` before assigning to `ScrollbarState`; the state's setters call `require(value in 0..65535)` and would throw for large documents
 
+**Session 31 — PR #3 review fixes (publish workflow + dead Swift code):**
+2026-05-08T18:42-0700 .github/workflows/publish.yml — renamed `MAVEN_CENTRAL_USERNAME`/`MAVEN_CENTRAL_PASSWORD` env vars to `ORG_GRADLE_PROJECT_mavenCentralUsername`/`ORG_GRADLE_PROJECT_mavenCentralPassword`; vanniktech reads credentials from Gradle properties named `mavenCentralUsername`/`mavenCentralPassword`, and the `ORG_GRADLE_PROJECT_*` prefix is the standard CI bridge — direct `MAVEN_CENTRAL_*` env vars are version-dependent and not documented for our setup
+2026-05-08T18:42-0700 sample-app-swift/Package.swift — removed dead `rustLibDir` arch-conditional declaration; it was previously consumed by `linkerSettings`, which were removed when the Rust static library was bundled into the XCFramework
+
 ## Decisions
 
 2026-02-25T20:58-0800 Mirrored prism build conventions — same build-logic pattern, version catalog, ktfmt+detekt quality plugin; ensures consistency and familiarity
@@ -468,4 +472,7 @@ f07d37e — fix: PR review — scrollbar alloc, skie dup, layout doc, SAFETY com
 b495dd3 — fix: all four pre-existing CI failures (lint task, Windows shell, Linux cross-linker, Swift SKIE)
 e569cc8 — fix: buildKatatuiFfiHeader uses wrong host triple on Windows
 b272dd9 — fix: address PR comments (Event validation, Rect clamp, ScrollbarState coerce)
-HEAD — fix: address remaining PR comments (non-nullable Key, pre-wrap scroll, viewportContentLength coerce)
+e7435d2 — fix: address remaining PR comments (non-nullable Key, pre-wrap scroll, viewportContentLength coerce)
+99529b6 — fix: bundle Rust static library in klib and XCFramework
+476c9c2 — chore: configure maven publishing to central portal
+HEAD — fix: address PR #3 review (publish env var names, remove dead Swift rustLibDir)
