@@ -12,6 +12,8 @@ The previous publish workflow used a 3-runner OS matrix where each runner ran `p
 
 2026-05-08T23:57-0700 .github/workflows/publish.yml — dropped the 3-OS matrix. One `macos-26` job that installs all five Rust targets, `brew install`s the cross-compile linkers (`messense/macos-cross-toolchains` for Linux GNU triples + `mingw-w64` for Windows), sets `CARGO_TARGET_*_LINKER` env vars to point cargo at the brew binaries, and runs `publishAllPublicationsToMavenCentral -PcrossCompile=true`.
 
+2026-05-09T00:12-0700 katatui-ffi/src/lib.rs + src/terminal.rs — cleaned up two cargo warnings surfaced by the cross-compile run: removed the private `use types::KatatuiRect;` that was shadowing the `pub use types::*;` re-export (effectively suppressing `KatatuiRect` from the crate's public API), and removed the unused `terminal: *mut KatatuiTerminal` field on `KatatuiFrame` (set in `katatui_terminal_begin_draw` but never read).
+
 ## Decisions
 
 2026-05-08T23:57-0700 Single-runner cross-compile chosen over multi-runner per-target publishing. The multi-runner path requires declaring all targets on the root-metadata-publishing runner, which then drags in `commonizeCInterop` across every target, which needs cinterop output for each — and `nativeMain` imports the commonized cinterop API, so disabling commonization breaks the build. Single-runner is simpler in Gradle (no per-target task disabling, no `commonizeCInterop` workarounds) at the cost of installing cross-compile linkers in CI.
@@ -28,4 +30,5 @@ The previous publish workflow used a 3-runner OS matrix where each runner ran `p
 
 ## Commits
 
-HEAD — fix: cross-compile all KMP targets on Mac for complete root metadata
+11c7507 — fix: cross-compile all KMP targets on Mac for complete root metadata
+HEAD — chore: clean up two cargo warnings (shadowed re-export, unused field)

@@ -9,7 +9,6 @@ pub struct KatatuiTerminal {
 }
 
 pub struct KatatuiFrame {
-    pub(crate) terminal: *mut KatatuiTerminal,
     pub(crate) area: KatatuiRect,
     pub(crate) ops: Vec<RenderOp>,
 }

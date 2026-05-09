@@ -5,7 +5,6 @@ pub mod widgets;
 use crossterm::event::{self, Event, KeyEventKind};
 use std::time::Duration;
 use terminal::{KatatuiFrame, KatatuiTerminal};
-use types::KatatuiRect;
 use widgets::{
     bar_chart::build_bar_chart,
     block::build_block,
@@ -85,7 +84,6 @@ pub extern "C" fn katatui_terminal_begin_draw(
     let size = t.inner.size().unwrap_or_default();
     let area = KatatuiRect { x: 0, y: 0, width: size.width, height: size.height };
     let frame = Box::into_raw(Box::new(KatatuiFrame {
-        terminal,
         area,
         ops: Vec::new(),
     }));
